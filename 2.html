@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASM Gestão Clínica Pro</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+* { font-family: 'Inter', sans-serif; }
+.bg-navy { background-color: #1e3a8a; }
+.bg-navy-dark { background-color: #1e40af; }
+.text-navy { color: #1e3a8a; }
+.border-navy { border-color: #1e3a8a; }
+.bg-gold { background-color: #d4af37; }
+.text-gold { color: #d4af37; }
+.bg-gold-light { background-color: #f4e4a6; }
+.hidden { display: none !important; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal-content { background: white; border-radius: 12px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+.tab-active { border-bottom: 3px solid #d4af37; color: #1e3a8a; font-weight: 600; }
+.tab-inactive { color: #6b7280; }
+.sidebar-item { transition: all 0.3s; }
+.sidebar-item:hover { background-color: rgba(255,255,255,0.1); }
+.card-hover { transition: transform 0.2s, box-shadow 0.2s; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+.btn-primary { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; transition: all 0.3s; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,58,138,0.4); }
+.btn-gold { background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%); color: white; transition: all 0.3s; }
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(212,175,55,0.4); }
+.input-field { border: 2px solid #e5e7eb; transition: all 0.3s; }
+.input-field:focus { border-color: #1e3a8a; outline: none; box-shadow: 0 0 0 3px rgba(30,58,138,0.1); }
+.calendar-day { min-height: 100px; transition: all 0.2s; }
+.calendar-day:hover { background-color: #f3f4f6; }
+.appointment-card { transition: all 0.2s; cursor: pointer; }
+.appointment-card:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.user-card { transition: all 0.3s; border: 2px solid transparent; }
+.user-card:hover { border-color: #d4af37; transform: translateY(-2px); }
+.user-card.active { border-color: #1e3a8a; background-color: #eff6ff; }
+.delete-btn { color: #ef4444; transition: all 0.2s; padding: 8px; border-radius: 6px; }
+.delete-btn:hover { background-color: #fee2e2; transform: scale(1.1); }
+</style>
+</head>
+<body class="bg-gray-50">
+
+<!-- LOGIN SCREEN - MANTIDA EXATAMENTE COMO ESTÁ -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 fade-in">
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 bg-navy rounded-full flex items-center justify-center mx-auto mb-4">
+        <i class="fas fa-hospital text-3xl text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-navy">ASM Gestão Clínica</h1>
+      <p class="text-gray-500 text-sm mt-1">Sistema Profissional de Gestão</p>
+    </div>
+    
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">CPF do Responsável</label>
+        <input type="text" id="loginCPF" class="input-field w-full px-4 py-3 rounded-lg" placeholder="000.000.000-00" maxlength="14">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Código de Ativação</label>
+        <input type="text" id="loginCode" class="input-field w-full px-4 py-3 rounded-lg uppercase" placeholder="AA######" maxlength="8">
+      </div>
+      <button type="submit" class="btn-primary w-full py-3 rounded-lg font-semibold text-lg">
+        <i class="fas fa-sign-in-alt mr-2"></i>Acessar Sistema
+      </button>
+    </form>
+    
+    <div id="loginError" class="hidden mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center"></div>
+    
+    <div class="mt-6 text-center text-xs text-gray-400">
+      <p>© 2024 ASM Gestão Clínica Pro</p>
+      <p class="mt-1">Dra Andresa Augusto - CREFITO 40.9314-F</p>
+      <p class="mt-1">Proibida reprodução sem autorização</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-navy text-white flex flex-col">
+    <div class="p-6 border-b border-blue-800">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gold rounded-lg flex items-center justify-center">
+          <i class="fas fa-clinic-medical text-navy"></i>
+        </div>
+        <div>
+          <h2 class="font-bold text-sm">ASM Gestão</h2>
+          <p class="text-xs text-blue-200">Clínica Pro</p>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-2">
+      <button onclick="showSection('dashboard')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" id="nav-dashboard">
+        <i class="fas fa-chart-line w-5"></i>
+        <span>Dashboard</span>
+      </button>
+      <button onclick="showSection('agenda')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" id="nav-agenda">
+        <i class="fas fa-calendar-alt w-5"></i>
+        <span>Agenda</span>
+      </button>
+      <button onclick="showSection('pacientes')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" id="nav-pacientes">
+        <i class="fas fa-user-injured w-5"></i>
+        <span>Pacientes</span>
+      </button>
+      <button onclick="showSection('financeiro')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" id="nav-financeiro">
+        <i class="fas fa-dollar-sign w-5"></i>
+        <span>Financeiro</span>
+      </button>
+      <button onclick="showSection('config')" class="sidebar-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left" id="nav-config">
+        <i class="fas fa-cog w-5"></i>
+        <span>Configurações</span>
+      </button>
+    </nav>
+    
+    <div class="p-4 border-t border-blue-800">
+      <div class="bg-blue-800 rounded-lg p-3 mb-3">
+        <p class="text-xs text-blue-200">Profissional Ativo:</p>
+        <p class="font-semibold text-sm" id="currentUserName">-</p>
+        <p class="text-xs text-gold" id="currentUserRole">-</p>
+      </div>
+      <button onclick="logout()" class="w-full flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition text-sm">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Content Area -->
+  <main class="flex-1 flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-navy" id="pageTitle">Dashboard</h1>
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-500" id="currentDate"></span>
+        <div class="w-8 h-8 bg-navy rounded-full flex items-center justify-center text-white text-sm font-bold" id="userInitial">A</div>
+      </div>
+    </header>
+
+    <!-- Content Sections -->
+    <div class="flex-1 p-6 overflow-auto">
+      
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="fade-in">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-500 text-sm">Agendamentos Hoje</p>
+                <h3 class="text-2xl font-bold text-navy mt-1" id="dashToday">0</h3>
+              </div>
+              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-check text-navy text-xl"></i>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-500 text-sm">Pacientes Ativos</p>
+                <h3 class="text-2xl font-bold text-navy mt-1" id="dashPatients">0</h3>
+              </div>
+              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-green-600 text-xl"></i>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-500 text-sm">Receita Mês</p>
+                <h3 class="text-2xl font-bold text-green-600 mt-1" id="dashRevenue">R$ 0,00</h3>
+              </div>
+              <div class="w-12 h-12 bg-gold-light rounded-lg flex items-center justify-center">
+                <i class="fas fa-wallet text-gold text-xl"></i>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-gray-500 text-sm">Despesas Mês</p>
+                <h3 class="text-2xl font-bold text-red-600 mt-1" id="dashExpenses">R$ 0,00</h3>
+              </div>
+              <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-arrow-down text-red-600 text-xl"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="font-bold text-navy mb-4">Próximos Agendamentos</h3>
+            <div id="dashNextAppointments" class="space-y-3">
+              <p class="text-gray-400 text-center py-8">Nenhum agendamento próximo</p>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="font-bold text-navy mb-4">Resumo Financeiro</h3>
+            <canvas id="financeChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- AGENDA -->
+      <section id="agenda" class="hidden fade-in">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <div class="flex items-center gap-4">
+              <button onclick="changeMonth(-1)" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <h2 class="text-xl font-bold text-navy" id="calendarMonth">Janeiro 2024</h2>
+              <button onclick="changeMonth(1)" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="exportAgendaExcel()" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                <i class="fas fa-file-excel"></i>Exportar Excel
+              </button>
+              <button onclick="exportAgendaPDF()" class="btn-gold px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                <i class="fas fa-file-pdf"></i>Exportar PDF
+              </button>
+              <button onclick="openAppointmentModal()" class="btn-gold px-4 py-2 rounded-lg flex items-center gap-2">
+                <i class="fas fa-plus"></i>Novo Agendamento
+              </button>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-7 gap-2 mb-2">
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Dom</div>
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Seg</div>
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Ter</div>
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Qua</div>
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Qui</div>
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Sex</div>
+            <div class="text-center text-sm font-semibold text-gray-600 py-2">Sáb</div>
+          </div>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+            <!-- Calendar generated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PACIENTES -->
+      <section id="pacientes" class="hidden fade-in">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
+            <div class="flex-1 max-w-md">
+              <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="patientSearch" class="input-field w-full pl-10 pr-4 py-2 rounded-lg" placeholder="Buscar paciente..." oninput="searchPatients()">
+              </div>
+            </div>
+            <button onclick="openPatientModal()" class="btn-gold px-4 py-2 rounded-lg flex items-center gap-2">
+              <i class="fas fa-plus"></i>Novo Paciente
+            </button>
+          </div>
+          
+          <div id="patientsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Patients generated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- FINANCEIRO -->
+      <section id="financeiro" class="hidden fade-in">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-bold text-navy">Fluxo de Caixa</h3>
+              <div class="flex gap-2">
+                <button onclick="openTransactionModal('income')" class="btn-primary px-3 py-1 rounded text-sm">
+                  <i class="fas fa-plus mr-1"></i>Receita
+                </button>
+                <button onclick="openTransactionModal('expense')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
+                  <i class="fas fa-minus mr-1"></i>Despesa
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-4 py-2 text-left">Data</th>
+                    <th class="px-4 py-2 text-left">Descrição</th>
+                    <th class="px-4 py-2 text-left">Categoria</th>
+                    <th class="px-4 py-2 text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody id="transactionsList">
+                  <!-- Transactions generated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div class="space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+              <h3 class="font-bold text-navy mb-4">Resumo do Mês</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                  <span class="text-green-700">Receitas</span>
+                  <span class="font-bold text-green-700" id="monthIncome">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg">
+                  <span class="text-red-700">Despesas</span>
+                  <span class="font-bold text-red-700" id="monthExpense">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg border-t-2 border-blue-200">
+                  <span class="font-bold text-navy">Saldo</span>
+                  <span class="font-bold text-navy" id="monthBalance">R$ 0,00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFIGURAÇÕES -->
+      <section id="config" class="hidden fade-in">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h3 class="font-bold text-navy mb-6 flex items-center gap-2">
+            <i class="fas fa-users-cog text-gold"></i>
+            Gestão de Usuários da Clínica
+          </h3>
+          
+          <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+            <p class="text-sm text-navy">
+              <i class="fas fa-info-circle mr-2"></i>
+              Limite de <strong>6 usuários</strong> por clínica. Cada usuário tem acesso aos seus próprios dados financeiros e pacientes, mas compartilham a mesma agenda.
+            </p>
+          </div>
+
+          <div id="usersList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <!-- Users generated by JS -->
+          </div>
+          
+          <button onclick="openUserModal()" id="addUserBtn" class="btn-gold px-6 py-3 rounded-lg flex items-center gap-2 mx-auto">
+            <i class="fas fa-user-plus"></i>
+            Adicionar Novo Usuário
+          </button>
+          
+          <div id="userLimitMsg" class="hidden mt-4 p-4 bg-yellow-50 text-yellow-700 rounded-lg text-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            Limite de 6 usuários atingido. Remova um usuário existente para adicionar outro.
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6">
+          <h3 class="font-bold text-navy mb-4 flex items-center gap-2">
+            <i class="fas fa-clinic-medical text-gold"></i>
+            Dados da Clínica
+          </h3>
+          <form id="clinicForm" class="space-y-4 max-w-2xl">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Clínica</label>
+              <input type="text" id="clinicName" class="input-field w-full px-4 py-2 rounded-lg">
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input type="text" id="clinicPhone" class="input-field w-full px-4 py-2 rounded-lg">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <input type="email" id="clinicEmail" class="input-field w-full px-4 py-2 rounded-lg">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+              <input type="text" id="clinicAddress" class="input-field w-full px-4 py-2 rounded-lg">
+            </div>
+            <button type="submit" class="btn-primary px-6 py-2 rounded-lg">Salvar Dados</button>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: Novo Agendamento -->
+<div id="appointmentModal" class="modal hidden">
+  <div class="modal-content w-full max-w-lg p-6 m-4">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-navy">Novo Agendamento</h3>
+      <button onclick="closeModal('appointmentModal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    <form id="appointmentForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Paciente</label>
+        <select id="appPatient" class="input-field w-full px-4 py-2 rounded-lg" required>
+          <option value="">Selecione um paciente...</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+          <input type="date" id="appDate" class="input-field w-full px-4 py-2 rounded-lg" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Horário</label>
+          <input type="time" id="appTime" class="input-field w-full px-4 py-2 rounded-lg" required>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Atendimento</label>
+        <select id="appType" class="input-field w-full px-4 py-2 rounded-lg">
+          <option value="consulta">Consulta</option>
+          <option value="retorno">Retorno</option>
+          <option value="avaliacao">Avaliação</option>
+          <option value="procedimento">Procedimento</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+        <textarea id="appNotes" rows="3" class="input-field w-full px-4 py-2 rounded-lg"></textarea>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('appointmentModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+        <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Novo Paciente -->
+<div id="patientModal" class="modal hidden">
+  <div class="modal-content w-full max-w-2xl p-6 m-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-navy">Cadastro de Paciente</h3>
+      <button onclick="closeModal('patientModal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="flex gap-4 mb-6 border-b">
+      <button type="button" onclick="switchPatientTab('info')" id="tab-info" class="pb-2 px-4 tab-active">Informações</button>
+      <button type="button" onclick="switchPatientTab('finance')" id="tab-finance" class="pb-2 px-4 tab-inactive">Financeiro</button>
+      <button type="button" onclick="switchPatientTab('evolution')" id="tab-evolution" class="pb-2 px-4 tab-inactive">Evolução</button>
+      <button type="button" onclick="switchPatientTab('report')" id="tab-report" class="pb-2 px-4 tab-inactive">Relatório</button>
+    </div>
+
+    <form id="patientForm">
+      <!-- Aba Informações -->
+      <div id="patientTab-info" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
+            <input type="text" id="patName" class="input-field w-full px-4 py-2 rounded-lg" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+            <input type="text" id="patCPF" class="input-field w-full px-4 py-2 rounded-lg" placeholder="000.000.000-00">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+            <input type="date" id="patBirth" class="input-field w-full px-4 py-2 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
+            <input type="tel" id="patPhone" class="input-field w-full px-4 py-2 rounded-lg" required placeholder="(31) 99999-9999">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+          <input type="email" id="patEmail" class="input-field w-full px-4 py-2 rounded-lg">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+          <input type="text" id="patAddress" class="input-field w-full px-4 py-2 rounded-lg">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Queixa Principal / Motivo da Consulta</label>
+          <textarea id="patComplaint" rows="3" class="input-field w-full px-4 py-2 rounded-lg"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Histórico Clínico / Observações</label>
+          <textarea id="patHistory" rows="4" class="input-field w-full px-4 py-2 rounded-lg"></textarea>
+        </div>
+      </div>
+
+      <!-- Aba Financeiro -->
+      <div id="patientTab-finance" class="space-y-4 hidden">
+        <div class="bg-gray-50 p-4 rounded-lg mb-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm text-gray-600">Total em Aberto:</span>
+            <span class="text-xl font-bold text-red-600" id="patTotalDue">R$ 0,00</span>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 mb-4">
+          <button type="button" onclick="openPaymentModal()" class="btn-primary px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-plus mr-2"></i>Adicionar Pagamento
+          </button>
+          <button type="button" onclick="generatePatientFinancePDF()" class="btn-gold px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-file-pdf mr-2"></i>PDF Financeiro
+          </button>
+        </div>
+
+        <h4 class="font-semibold text-navy mb-2">Histórico de Pagamentos</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-3 py-2 text-left">Data</th>
+                <th class="px-3 py-2 text-left">Descrição</th>
+                <th class="px-3 py-2 text-right">Valor</th>
+                <th class="px-3 py-2 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="patientPaymentsList">
+              <tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum pagamento registrado</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Aba Evolução -->
+      <div id="patientTab-evolution" class="space-y-4 hidden">
+        <div class="flex gap-2 mb-4">
+          <button type="button" onclick="openEvolutionModal()" class="btn-primary px-4 py-2 rounded-lg text-sm">
+            <i class="fas fa-plus mr-2"></i>Nova Evolução
+          </button>
+        </div>
+
+        <div id="evolutionList" class="space-y-3">
+          <p class="text-gray-400 text-center py-8">Nenhuma evolução registrada</p>
+        </div>
+      </div>
+
+      <!-- Aba Relatório -->
+      <div id="patientTab-report" class="space-y-4 hidden">
+        <div class="bg-blue-50 p-4 rounded-lg mb-4">
+          <h4 class="font-semibold text-navy mb-2">Gerar Relatório do Paciente</h4>
+          <p class="text-sm text-gray-600 mb-4">Gere um relatório completo com dados do paciente, evoluções e histórico financeiro.</p>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" onclick="generatePatientReport()" class="btn-primary px-4 py-2 rounded-lg text-sm">
+              <i class="fas fa-file-pdf mr-2"></i>Gerar Relatório Completo
+            </button>
+            <button type="button" onclick="generatePatientAgendaReport()" class="btn-gold px-4 py-2 rounded-lg text-sm">
+              <i class="fas fa-calendar-alt mr-2"></i>Relatório de Agendamentos
+            </button>
+          </div>
+        </div>
+        
+        <div class="border rounded-lg p-4 bg-gray-50">
+          <h5 class="font-medium text-navy mb-2">Pré-visualização do Relatório</h5>
+          <div id="reportPreview" class="text-sm text-gray-600">
+            Clique em "Gerar Relatório Completo" para visualizar e exportar.
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 pt-6 mt-6 border-t">
+        <button type="button" onclick="closeModal('patientModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Fechar</button>
+        <button type="submit" class="flex-1 btn-primary py-2 rounded-lg" id="btnSavePatient">Salvar Paciente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Novo Usuário -->
+<div id="userModal" class="modal hidden">
+  <div class="modal-content w-full max-w-lg p-6 m-4">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-navy">Adicionar Usuário</h3>
+      <button onclick="closeModal('userModal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    <form id="userForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
+        <input type="text" id="userName" class="input-field w-full px-4 py-2 rounded-lg" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Profissão *</label>
+        <input type="text" id="userProfession" class="input-field w-full px-4 py-2 rounded-lg" placeholder="Ex: Fisioterapeuta, Médico, Nutricionista..." required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Registro Profissional (CREFITO/CRM/CRN/etc) *</label>
+        <input type="text" id="userRegistry" class="input-field w-full px-4 py-2 rounded-lg" placeholder="Ex: CREFITO 40.9314-F" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
+        <input type="text" id="userCPF" class="input-field w-full px-4 py-2 rounded-lg" placeholder="000.000.000-00" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Chave PIX</label>
+        <input type="text" id="userPIX" class="input-field w-full px-4 py-2 rounded-lg" placeholder="CPF, E-mail, Telefone ou Chave Aleatória">
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('userModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+        <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">Salvar Usuário</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Nova Transação -->
+<div id="transactionModal" class="modal hidden">
+  <div class="modal-content w-full max-w-lg p-6 m-4">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-navy" id="transTitle">Nova Receita</h3>
+      <button onclick="closeModal('transactionModal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    <form id="transactionForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+        <input type="text" id="transDescription" class="input-field w-full px-4 py-2 rounded-lg" required>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+          <input type="number" id="transAmount" step="0.01" class="input-field w-full px-4 py-2 rounded-lg" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+          <input type="date" id="transDate" class="input-field w-full px-4 py-2 rounded-lg" required>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+        <select id="transCategory" class="input-field w-full px-4 py-2 rounded-lg">
+          <option value="consulta">Consulta</option>
+          <option value="procedimento">Procedimento</option>
+          <option value="exame">Exame</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('transactionModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+        <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Nova Evolução -->
+<div id="evolutionModal" class="modal hidden">
+  <div class="modal-content w-full max-w-lg p-6 m-4">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-navy">Nova Evolução Clínica</h3>
+      <button onclick="closeModal('evolutionModal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    <form id="evolutionForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Data da Evolução</label>
+        <input type="date" id="evoDate" class="input-field w-full px-4 py-2 rounded-lg" required>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição da Evolução / Progresso</label>
+        <textarea id="evoDescription" rows="6" class="input-field w-full px-4 py-2 rounded-lg" placeholder="Descreva a evolução do paciente, procedimentos realizados, resposta ao tratamento..." required></textarea>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('evolutionModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+        <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">Salvar Evolução</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Novo Pagamento -->
+<div id="paymentModal" class="modal hidden">
+  <div class="modal-content w-full max-w-lg p-6 m-4">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold text-navy">Registrar Pagamento</h3>
+      <button onclick="closeModal('paymentModal')" class="text-gray-400 hover:text-gray-600">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    <form id="paymentForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+        <input type="text" id="payDescription" class="input-field w-full px-4 py-2 rounded-lg" required>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+          <input type="number" id="payAmount" step="0.01" class="input-field w-full px-4 py-2 rounded-lg" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+          <input type="date" id="payDate" class="input-field w-full px-4 py-2 rounded-lg" required>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+        <select id="payMethod" class="input-field w-full px-4 py-2 rounded-lg">
+          <option value="pix">PIX</option>
+          <option value="dinheiro">Dinheiro</option>
+          <option value="cartao">Cartão</option>
+          <option value="boleto">Boleto</option>
+        </select>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="closeModal('paymentModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+        <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Confirmação de Exclusão -->
+<div id="deleteConfirmModal" class="modal hidden">
+  <div class="modal-content w-full max-w-md p-6 m-4 text-center">
+    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+    </div>
+    <h3 class="text-xl font-bold text-navy mb-2">Confirmar Exclusão</h3>
+    <p class="text-gray-600 mb-6" id="deleteConfirmText">Tem certeza que deseja excluir este usuário? Todos os dados vinculados serão removidos permanentemente.</p>
+    <div class="flex gap-3">
+      <button onclick="closeModal('deleteConfirmModal')" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+      <button onclick="confirmDeleteUser()" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== FIREBASE CONFIG ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyDAP8Krf1cgz2r2kE5L3Z5R0qTC7P2n2r4",
+  authDomain: "asm-gestao-clinica.firebaseapp.com",
+  projectId: "asm-gestao-clinica",
+  storageBucket: "asm-gestao-clinica.appspot.com",
+  messagingSenderId: "846179775289",
+  appId: "1:846179775289:web:b914c4e024b1fb13a66ee8"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ==================== GLOBAL VARIABLES ====================
+let currentClinic = null;
+let currentUser = null;
+let currentPatient = null;
+let users = [];
+let patients = [];
+let appointments = [];
+let transactions = [];
+let currentMonth = new Date();
+let userToDelete = null;
+
+// ==================== AUTH & LOGIN ====================
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cpf = document.getElementById('loginCPF').value.replace(/\D/g, '');
+  const code = document.getElementById('loginCode').value.toUpperCase();
+  
+  if (cpf.length !== 11) {
+    showLoginError('CPF inválido. Digite os 11 números.');
+    return;
+  }
+  
+  if (!code.match(/^AA[A-Z0-9]{6}$/)) {
+    showLoginError('Código inválido. Formato: AA######');
+    return;
+  }
+  
+  try {
+    const clinicDoc = await db.collection('clinics').doc(cpf).get();
+    
+    if (!clinicDoc.exists) {
+      // Create new clinic
+      currentClinic = {
+        cpf: cpf,
+        activationCode: code,
+        createdAt: new Date(),
+        clinicName: 'Minha Clínica',
+        users: []
+      };
+      await db.collection('clinics').doc(cpf).set(currentClinic);
+    } else {
+      currentClinic = clinicDoc.data();
+      if (currentClinic.activationCode !== code) {
+        showLoginError('Código de ativação incorreto.');
+        return;
+      }
+    }
+    
+    // Load users
+    const usersSnapshot = await db.collection('clinics').doc(cpf).collection('users').get();
+    users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    if (users.length === 0) {
+      // First access - redirect to user creation
+      showUserSelection();
+    } else {
+      showUserSelection();
+    }
+    
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    updateDashboard();
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    showLoginError('Erro ao acessar. Tente novamente.');
+  }
+});
+
+function showLoginError(msg) {
+  const errorDiv = document.getElementById('loginError');
+  errorDiv.textContent = msg;
+  errorDiv.classList.remove('hidden');
+}
+
+function logout() {
+  currentClinic = null;
+  currentUser = null;
+  users = [];
+  patients = [];
+  appointments = [];
+  transactions = [];
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginForm').reset();
+  document.getElementById('loginError').classList.add('hidden');
+}
+
+// ==================== USER MANAGEMENT ====================
+function showUserSelection() {
+  // If only one user, auto-select
+  if (users.length === 1) {
+    selectUser(users[0]);
+    return;
+  }
+  
+  // Show user selection modal or redirect to config
+  if (users.length === 0) {
+    showSection('config');
+    openUserModal();
+  } else {
+    showSection('config');
+  }
+}
+
+function selectUser(user) {
+  currentUser = user;
+  document.getElementById('currentUserName').textContent = user.name;
+  document.getElementById('currentUserRole').textContent = user.profession + ' - ' + user.registry;
+  document.getElementById('userInitial').textContent = user.name.charAt(0).toUpperCase();
+  loadUserData();
+}
+
+async function loadUserData() {
+  if (!currentClinic || !currentUser) return;
+  
+  const clinicRef = db.collection('clinics').doc(currentClinic.cpf);
+  
+  // Load shared appointments
+  const appsSnapshot = await clinicRef.collection('appointments')
+    .where('month', '==', currentMonth.getMonth())
+    .where('year', '==', currentMonth.getFullYear())
+    .get();
+  appointments = appsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  // Load user's patients
+  const patsSnapshot = await clinicRef.collection('users').doc(currentUser.id).collection('patients').get();
+  patients = patsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  // Load user's transactions
+  const transSnapshot = await clinicRef.collection('users').doc(currentUser.id).collection('transactions')
+    .where('month', '==', currentMonth.getMonth())
+    .where('year', '==', currentMonth.getFullYear())
+    .get();
+  transactions = transSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  updateDashboard();
+  renderCalendar();
+  renderPatients();
+  renderTransactions();
+  renderUsers();
+}
+
+// ==================== USER CRUD ====================
+function renderUsers() {
+  const container = document.getElementById('usersList');
+  const addBtn = document.getElementById('addUserBtn');
+  const limitMsg = document.getElementById('userLimitMsg');
+  
+  if (users.length >= 6) {
+    addBtn.classList.add('hidden');
+    limitMsg.classList.remove('hidden');
+  } else {
+    addBtn.classList.remove('hidden');
+    limitMsg.classList.add('hidden');
+  }
+  
+  container.innerHTML = users.map(user => `
+    <div class="user-card bg-white rounded-lg p-4 shadow-sm ${currentUser && currentUser.id === user.id ? 'active' : ''}">
+      <div class="flex justify-between items-start mb-2">
+        <div class="w-12 h-12 bg-navy rounded-full flex items-center justify-center text-white font-bold text-lg">
+          ${user.name.charAt(0).toUpperCase()}
+        </div>
+        <div class="flex gap-2">
+          ${currentUser && currentUser.id === user.id ? '<span class="text-xs bg-gold text-white px-2 py-1 rounded">Ativo</span>' : ''}
+          <button onclick="deleteUser('${user.id}', '${user.name}')" class="delete-btn" title="Excluir usuário">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </div>
+      <h4 class="font-semibold text-navy">${user.name}</h4>
+      <p class="text-sm text-gray-600">${user.profession}</p>
+      <p class="text-xs text-gray-500 mt-1">${user.registry}</p>
+      ${user.pix ? `<p class="text-xs text-gold mt-1"><i class="fas fa-qrcode mr-1"></i>PIX: ${user.pix}</p>` : ''}
+      <button onclick="switchToUser('${user.id}')" class="mt-3 w-full py-2 rounded-lg border border-navy text-navy hover:bg-navy hover:text-white transition text-sm ${currentUser && currentUser.id === user.id ? 'hidden' : ''}">
+        Acessar como este usuário
+      </button>
+    </div>
+  `).join('');
+}
+
+function switchToUser(userId) {
+  const user = users.find(u => u.id === userId);
+  if (user) {
+    selectUser(user);
+    showSection('dashboard');
+  }
+}
+
+function deleteUser(userId, userName) {
+  userToDelete = userId;
+  document.getElementById('deleteConfirmText').textContent = `Tem certeza que deseja excluir o usuário "${userName}"? Todos os dados financeiros e pacientes vinculados a este usuário serão removidos permanentemente. Esta ação não pode ser desfeita.`;
+  document.getElementById('deleteConfirmModal').classList.remove('hidden');
+}
+
+async function confirmDeleteUser() {
+  if (!userToDelete || !currentClinic) return;
+  
+  try {
+    const userRef = db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(userToDelete);
+    
+    // Delete all user data (patients, transactions)
+    const patientsSnapshot = await userRef.collection('patients').get();
+    const batch = db.batch();
+    
+    patientsSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    const transSnapshot = await userRef.collection('transactions').get();
+    transSnapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    await userRef.delete();
+    
+    // Remove from local array
+    users = users.filter(u => u.id !== userToDelete);
+    
+    // If deleted user was current user, switch to another or null
+    if (currentUser && currentUser.id === userToDelete) {
+      currentUser = users.length > 0 ? users[0] : null;
+      if (currentUser) {
+        selectUser(currentUser);
+      }
+    }
+    
+    closeModal('deleteConfirmModal');
+    renderUsers();
+    alert('Usuário excluído com sucesso!');
+    
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    alert('Erro ao excluir usuário. Tente novamente.');
+  }
+  
+  userToDelete = null;
+}
+
+document.getElementById('userForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  if (users.length >= 6) {
+    alert('Limite de 6 usuários atingido.');
+    return;
+  }
+  
+  const newUser = {
+    name: document.getElementById('userName').value,
+    profession: document.getElementById('userProfession').value,
+    registry: document.getElementById('userRegistry').value,
+    cpf: document.getElementById('userCPF').value,
+    pix: document.getElementById('userPIX').value,
+    createdAt: new Date()
+  };
+  
+  try {
+    const docRef = await db.collection('clinics').doc(currentClinic.cpf).collection('users').add(newUser);
+    newUser.id = docRef.id;
+    users.push(newUser);
+    
+    if (!currentUser) {
+      selectUser(newUser);
+    }
+    
+    closeModal('userModal');
+    renderUsers();
+    document.getElementById('userForm').reset();
+    
+  } catch (error) {
+    console.error('Error creating user:', error);
+    alert('Erro ao criar usuário.');
+  }
+});
+
+// ==================== NAVIGATION ====================
+function showSection(sectionId) {
+  // Hide all sections
+  document.querySelectorAll('main > div > section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('nav button').forEach(b => {
+    b.classList.remove('bg-blue-800', 'border-l-4', 'border-gold');
+    b.classList.add('sidebar-item');
+  });
+  
+  // Show selected
+  document.getElementById(sectionId).classList.remove('hidden');
+  document.getElementById('pageTitle').textContent = 
+    sectionId === 'dashboard' ? 'Dashboard' :
+    sectionId === 'agenda' ? 'Agenda Compartilhada' :
+    sectionId === 'pacientes' ? 'Pacientes' :
+    sectionId === 'financeiro' ? 'Financeiro' :
+    sectionId === 'config' ? 'Configurações' : 'ASM Gestão';
+  
+  const navBtn = document.getElementById('nav-' + sectionId);
+  if (navBtn) {
+    navBtn.classList.add('bg-blue-800', 'border-l-4', 'border-gold');
+    navBtn.classList.remove('sidebar-item');
+  }
+  
+  if (sectionId === 'agenda') renderCalendar();
+  if (sectionId === 'pacientes') renderPatients();
+  if (sectionId === 'financeiro') renderTransactions();
+  if (sectionId === 'config') renderUsers();
+}
+
+// ==================== DASHBOARD ====================
+function updateDashboard() {
+  // Today's appointments
+  const today = new Date().toISOString().split('T')[0];
+  const todayApps = appointments.filter(a => a.date === today);
+  document.getElementById('dashToday').textContent = todayApps.length;
+  
+  // Total patients
+  document.getElementById('dashPatients').textContent = patients.length;
+  
+  // Revenue
+  const revenue = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  document.getElementById('dashRevenue').textContent = formatMoney(revenue);
+  
+  // Expenses
+  const expenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  document.getElementById('dashExpenses').textContent = formatMoney(expenses);
+  
+  // Next appointments
+  const nextApps = appointments
+    .filter(a => new Date(a.date + 'T' + a.time) >= new Date())
+    .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time))
+    .slice(0, 5);
+  
+  const nextContainer = document.getElementById('dashNextAppointments');
+  if (nextApps.length === 0) {
+    nextContainer.innerHTML = '<p class="text-gray-400 text-center py-8">Nenhum agendamento próximo</p>';
+  } else {
+    nextContainer.innerHTML = nextApps.map(app => {
+      const patient = patients.find(p => p.id === app.patientId) || { name: 'Paciente não encontrado' };
+      const user = users.find(u => u.id === app.userId) || { name: '' };
+      return `
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+          <div>
+            <p class="font-medium text-navy">${patient.name}</p>
+            <p class="text-xs text-gray-500">${formatDate(app.date)} às ${app.time} - ${user.name}</p>
+          </div>
+          <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">${app.type}</span>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // Update date
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', options);
+}
+
+// ==================== CALENDAR ====================
+function changeMonth(delta) {
+  currentMonth.setMonth(currentMonth.getMonth() + delta);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  document.getElementById('calendarMonth').textContent = `${monthNames[month]} ${year}`;
+  
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  let html = '';
+  
+  // Empty cells
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="calendar-day bg-gray-50 rounded-lg"></div>';
+  }
+  
+  // Days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dayApps = appointments.filter(a => a.date === dateStr);
+    
+    html += `
+      <div class="calendar-day bg-white rounded-lg border p-2 cursor-pointer" onclick="openAppointmentModal('${dateStr}')">
+        <div class="font-semibold text-navy mb-1">${day}</div>
+        <div class="space-y-1">
+          ${dayApps.slice(0, 3).map(app => {
+            const patient = patients.find(p => p.id === app.patientId) || { name: '?' };
+            const user = users.find(u => u.id === app.userId) || { name: '' };
+            return `
+              <div class="appointment-card text-xs bg-blue-100 text-blue-800 p-1 rounded truncate" onclick="event.stopPropagation(); editAppointment('${app.id}')">
+                ${app.time} - ${patient.name.split(' ')[0]} (${user.name.split(' ')[0]})
+              </div>
+            `;
+          }).join('')}
+          ${dayApps.length > 3 ? `<div class="text-xs text-gray-400">+${dayApps.length - 3} mais</div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+  
+  document.getElementById('calendarGrid').innerHTML = html;
+}
+
+// ==================== EXPORT AGENDA ====================
+function exportAgendaExcel() {
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  
+  const monthApps = appointments.filter(a => {
+    const appDate = new Date(a.date);
+    return appDate.getFullYear() === year && appDate.getMonth() === month;
+  }).sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+  
+  if (monthApps.length === 0) {
+    alert('Nenhum agendamento para este mês.');
+    return;
+  }
+  
+  const data = monthApps.map(app => {
+    const patient = patients.find(p => p.id === app.patientId) || { name: 'N/A' };
+    const user = users.find(u => u.id === app.userId) || { name: 'N/A' };
+    return {
+      'Data': formatDate(app.date),
+      'Horário': app.time,
+      'Paciente': patient.name,
+      'Profissional': `${user.name} (${user.profession})`,
+      'Tipo': app.type,
+      'Observações': app.notes || ''
+    };
+  });
+  
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Agenda');
+  
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  XLSX.writeFile(wb, `Agenda_${monthNames[month]}_${year}.xlsx`);
+}
+
+function exportAgendaPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  
+  const monthApps = appointments.filter(a => {
+    const appDate = new Date(a.date);
+    return appDate.getFullYear() === year && appDate.getMonth() === month;
+  }).sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+  
+  if (monthApps.length === 0) {
+    alert('Nenhum agendamento para este mês.');
+    return;
+  }
+  
+  // Header
+  doc.setFillColor(30, 58, 138);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.text('ASM Gestão Clínica', 105, 15, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text(`Agenda - ${monthNames[month]} ${year}`, 105, 25, { align: 'center' });
+  
+  // Table
+  const tableData = monthApps.map(app => {
+    const patient = patients.find(p => p.id === app.patientId) || { name: 'N/A' };
+    const user = users.find(u => u.id === app.userId) || { name: 'N/A' };
+    return [
+      formatDate(app.date),
+      app.time,
+      patient.name,
+      `${user.name} (${user.profession})`
+    ];
+  });
+  
+  doc.autoTable({
+    startY: 40,
+    head: [['Data', 'Horário', 'Paciente', 'Profissional']],
+    body: tableData,
+    theme: 'grid',
+    headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [245, 247, 250] }
+  });
+  
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(`Página ${i} de ${pageCount} | ASM Gestão Clínica Pro`, 105, 290, { align: 'center' });
+  }
+  
+  doc.save(`Agenda_${monthNames[month]}_${year}.pdf`);
+}
+
+// ==================== APPOINTMENTS ====================
+function openAppointmentModal(date = null) {
+  if (!currentUser) {
+    alert('Selecione um usuário primeiro em Configurações.');
+    showSection('config');
+    return;
+  }
+  
+  document.getElementById('appointmentForm').reset();
+  if (date) document.getElementById('appDate').value = date;
+  
+  // Populate patients
+  const select = document.getElementById('appPatient');
+  select.innerHTML = '<option value="">Selecione um paciente...</option>' +
+    patients.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  
+  document.getElementById('appointmentModal').classList.remove('hidden');
+}
+
+document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const appointment = {
+    patientId: document.getElementById('appPatient').value,
+    date: document.getElementById('appDate').value,
+    time: document.getElementById('appTime').value,
+    type: document.getElementById('appType').value,
+    notes: document.getElementById('appNotes').value,
+    userId: currentUser.id,
+    userName: currentUser.name,
+    month: currentMonth.getMonth(),
+    year: currentMonth.getFullYear(),
+    createdAt: new Date()
+  };
+  
+  try {
+    await db.collection('clinics').doc(currentClinic.cpf).collection('appointments').add(appointment);
+    appointments.push(appointment);
+    closeModal('appointmentModal');
+    renderCalendar();
+    updateDashboard();
+    
+  } catch (error) {
+    console.error('Error saving appointment:', error);
+    alert('Erro ao salvar agendamento.');
+  }
+});
+
+function editAppointment(appId) {
+  // Implementation for editing appointment
+  alert('Função de edição em desenvolvimento.');
+}
+
+// ==================== PATIENTS ====================
+function renderPatients() {
+  const container = document.getElementById('patientsList');
+  const search = document.getElementById('patientSearch')?.value.toLowerCase() || '';
+  
+  const filtered = patients.filter(p => 
+    p.name.toLowerCase().includes(search) || 
+    (p.cpf && p.cpf.includes(search))
+  );
+  
+  if (filtered.length === 0) {
+    container.innerHTML = '<p class="col-span-full text-center text-gray-400 py-8">Nenhum paciente encontrado</p>';
+    return;
+  }
+  
+  container.innerHTML = filtered.map(p => `
+    <div class="bg-white rounded-lg p-4 shadow-sm card-hover cursor-pointer" onclick="openPatientModal('${p.id}')">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 bg-navy rounded-full flex items-center justify-center text-white">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <h4 class="font-semibold text-navy">${p.name}</h4>
+          <p class="text-xs text-gray-500">${p.phone || 'Sem telefone'}</p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-600 line-clamp-2">${p.complaint || 'Sem queixa principal'}</p>
+    </div>
+  `).join('');
+}
+
+function searchPatients() {
+  renderPatients();
+}
+
+function openPatientModal(patientId = null) {
+  currentPatient = patientId ? patients.find(p => p.id === patientId) : null;
+  
+  // Reset tabs
+  switchPatientTab('info');
+  
+  if (currentPatient) {
+    document.getElementById('patName').value = currentPatient.name || '';
+    document.getElementById('patCPF').value = currentPatient.cpf || '';
+    document.getElementById('patBirth').value = currentPatient.birth || '';
+    document.getElementById('patPhone').value = currentPatient.phone || '';
+    document.getElementById('patEmail').value = currentPatient.email || '';
+    document.getElementById('patAddress').value = currentPatient.address || '';
+    document.getElementById('patComplaint').value = currentPatient.complaint || '';
+    document.getElementById('patHistory').value = currentPatient.history || '';
+    document.getElementById('btnSavePatient').textContent = 'Atualizar Paciente';
+    
+    loadPatientFinance();
+    loadPatientEvolutions();
+  } else {
+    document.getElementById('patientForm').reset();
+    document.getElementById('btnSavePatient').textContent = 'Salvar Paciente';
+    document.getElementById('patientPaymentsList').innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum pagamento registrado</td></tr>';
+    document.getElementById('evolutionList').innerHTML = '<p class="text-gray-400 text-center py-8">Nenhuma evolução registrada</p>';
+  }
+  
+  document.getElementById('patientModal').classList.remove('hidden');
+}
+
+function switchPatientTab(tab) {
+  ['info', 'finance', 'evolution', 'report'].forEach(t => {
+    document.getElementById('patientTab-' + t).classList.add('hidden');
+    document.getElementById('tab-' + t).classList.remove('tab-active');
+    document.getElementById('tab-' + t).classList.add('tab-inactive');
+  });
+  
+  document.getElementById('patientTab-' + tab).classList.remove('hidden');
+  document.getElementById('tab-' + tab).classList.add('tab-active');
+  document.getElementById('tab-' + tab).classList.remove('tab-inactive');
+}
+
+document.getElementById('patientForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const patientData = {
+    name: document.getElementById('patName').value,
+    cpf: document.getElementById('patCPF').value,
+    birth: document.getElementById('patBirth').value,
+    phone: document.getElementById('patPhone').value,
+    email: document.getElementById('patEmail').value,
+    address: document.getElementById('patAddress').value,
+    complaint: document.getElementById('patComplaint').value,
+    history: document.getElementById('patHistory').value,
+    updatedAt: new Date()
+  };
+  
+  try {
+    if (currentPatient) {
+      await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('patients').doc(currentPatient.id).update(patientData);
+      Object.assign(currentPatient, patientData);
+    } else {
+      patientData.createdAt = new Date();
+      const docRef = await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('patients').add(patientData);
+      patientData.id = docRef.id;
+      patients.push(patientData);
+    }
+    
+    closeModal('patientModal');
+    renderPatients();
+    
+  } catch (error) {
+    console.error('Error saving patient:', error);
+    alert('Erro ao salvar paciente.');
+  }
+});
+
+// ==================== PATIENT FINANCE ====================
+async function loadPatientFinance() {
+  if (!currentPatient) return;
+  
+  const paymentsSnapshot = await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('patients').doc(currentPatient.id).collection('payments').orderBy('date', 'desc').get();
+  
+  const payments = paymentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const totalDue = payments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0);
+  
+  document.getElementById('patTotalDue').textContent = formatMoney(totalDue);
+  
+  const tbody = document.getElementById('patientPaymentsList');
+  if (payments.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nenhum pagamento registrado</td></tr>';
+  } else {
+    tbody.innerHTML = payments.map(p => `
+      <tr class="border-b">
+        <td class="px-3 py-2">${formatDate(p.date)}</td>
+        <td class="px-3 py-2">${p.description}</td>
+        <td class="px-3 py-2 text-right">${formatMoney(p.amount)}</td>
+        <td class="px-3 py-2 text-center">
+          <span class="px-2 py-1 rounded text-xs ${p.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+            ${p.status === 'paid' ? 'Pago' : 'Pendente'}
+          </span>
+        </td>
+      </tr>
+    `).join('');
+  }
+}
+
+function openPaymentModal() {
+  if (!currentPatient) return;
+  document.getElementById('paymentForm').reset();
+  document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('paymentModal').classList.remove('hidden');
+}
+
+document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const payment = {
+    description: document.getElementById('payDescription').value,
+    amount: parseFloat(document.getElementById('payAmount').value),
+    date: document.getElementById('payDate').value,
+    method: document.getElementById('payMethod').value,
+    status: 'pending',
+    createdAt: new Date()
+  };
+  
+  try {
+    await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('patients').doc(currentPatient.id).collection('payments').add(payment);
+    
+    // Also add to transactions
+    const transaction = {
+      description: `Paciente: ${currentPatient.name} - ${payment.description}`,
+      amount: payment.amount,
+      date: payment.date,
+      type: 'income',
+      category: 'consulta',
+      month: new Date().getMonth(),
+      year: new Date().getFullYear(),
+      createdAt: new Date()
+    };
+    
+    await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('transactions').add(transaction);
+    transactions.push(transaction);
+    
+    closeModal('paymentModal');
+    loadPatientFinance();
+    renderTransactions();
+    updateDashboard();
+    
+  } catch (error) {
+    console.error('Error saving payment:', error);
+    alert('Erro ao registrar pagamento.');
+  }
+});
+
+// ==================== EVOLUTIONS ====================
+async function loadPatientEvolutions() {
+  if (!currentPatient) return;
+  
+  const evoSnapshot = await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('patients').doc(currentPatient.id).collection('evolutions').orderBy('date', 'desc').get();
+  
+  const evolutions = evoSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  const container = document.getElementById('evolutionList');
+  if (evolutions.length === 0) {
+    container.innerHTML = '<p class="text-gray-400 text-center py-8">Nenhuma evolução registrada</p>';
+  } else {
+    container.innerHTML = evolutions.map(evo => `
+      <div class="border-l-4 border-navy pl-4 py-2 bg-gray-50 rounded-r-lg">
+        <div class="flex justify-between items-start mb-1">
+          <span class="text-sm font-semibold text-navy">${formatDate(evo.date)}</span>
+          <span class="text-xs text-gray-500">${evo.createdAt ? new Date(evo.createdAt.toDate()).toLocaleString('pt-BR') : ''}</span>
+        </div>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">${evo.description}</p>
+      </div>
+    `).join('');
+  }
+}
+
+function openEvolutionModal() {
+  if (!currentPatient) return;
+  document.getElementById('evolutionForm').reset();
+  document.getElementById('evoDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('evolutionModal').classList.remove('hidden');
+}
+
+document.getElementById('evolutionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const evolution = {
+    date: document.getElementById('evoDate').value,
+    description: document.getElementById('evoDescription').value,
+    createdAt: new Date()
+  };
+  
+  try {
+    await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('patients').doc(currentPatient.id).collection('evolutions').add(evolution);
+    closeModal('evolutionModal');
+    loadPatientEvolutions();
+    
+  } catch (error) {
+    console.error('Error saving evolution:', error);
+    alert('Erro ao salvar evolução.');
+  }
+});
+
+// ==================== REPORTS ====================
+function generatePatientReport() {
+  if (!currentPatient) return;
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // Header
+  doc.setFillColor(30, 58, 138);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('ASM Gestão Clínica', 105, 15, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('Relatório do Paciente', 105, 25, { align: 'center' });
+  
+  // Patient info
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(14);
+  doc.text('Dados do Paciente', 20, 50);
+  doc.setFontSize(10);
+  doc.text(`Nome: ${currentPatient.name}`, 20, 60);
+  doc.text(`CPF: ${currentPatient.cpf || 'N/A'}`, 20, 67);
+  doc.text(`Telefone: ${currentPatient.phone || 'N/A'}`, 20, 74);
+  doc.text(`Data de Nascimento: ${currentPatient.birth ? formatDate(currentPatient.birth) : 'N/A'}`, 20, 81);
+  
+  // Professional info
+  doc.setFontSize(10);
+  doc.setTextColor(128, 128, 128);
+  doc.text(`Profissional: ${currentUser.name} - ${currentUser.profession}`, 20, 95);
+  doc.text(`Registro: ${currentUser.registry}`, 20, 102);
+  
+  // Complaint
+  doc.setFontSize(12);
+  doc.setTextColor(30, 58, 138);
+  doc.text('Queixa Principal', 20, 115);
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  const complaintLines = doc.splitTextToSize(currentPatient.complaint || 'Não informada', 170);
+  doc.text(complaintLines, 20, 122);
+  
+  // History
+  doc.setFontSize(12);
+  doc.setTextColor(30, 58, 138);
+  doc.text('Histórico Clínico', 20, 145);
+  doc.setFontSize(10);
+  doc.setTextColor(0, 0, 0);
+  const historyLines = doc.splitTextToSize(currentPatient.history || 'Não informado', 170);
+  doc.text(historyLines, 20, 152);
+  
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(128, 128, 128);
+  doc.text(`Documento gerado em ${new Date().toLocaleString('pt-BR')} | ASM Gestão Clínica Pro`, 105, 280, { align: 'center' });
+  doc.text('Dra Andresa Augusto - CREFITO 40.9314-F - Proibida reprodução sem autorização', 105, 285, { align: 'center' });
+  
+  doc.save(`Relatorio_${currentPatient.name.replace(/\s+/g, '_')}.pdf`);
+}
+
+async function generatePatientAgendaReport() {
+  if (!currentPatient) return;
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // Get patient appointments
+  const patientApps = appointments.filter(a => a.patientId === currentPatient.id)
+    .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+  
+  // Header
+  doc.setFillColor(30, 58, 138);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.text('ASM Gestão Clínica', 105, 15, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text('Relatório de Agendamentos', 105, 25, { align: 'center' });
+  
+  // Patient info
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(14);
+  doc.text(`Paciente: ${currentPatient.name}`, 20, 50);
+  doc.setFontSize(10);
+  doc.text(`Total de Agendamentos: ${patientApps.length}`, 20, 60);
+  
+  // Table
+  if (patientApps.length > 0) {
+    const tableData = patientApps.map(app => {
+      const user = users.find(u => u.id === app.userId) || { name: 'N/A', profession: '' };
+      return [
+        formatDate(app.date),
+        app.time,
+        app.type,
+        `${user.name} (${user.profession})`
+      ];
+    });
+    
+    doc.autoTable({
+      startY: 70,
+      head: [['Data', 'Horário', 'Tipo', 'Profissional']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [245, 247, 250] }
+    });
+  } else {
+    doc.text('Nenhum agendamento encontrado para este paciente.', 20, 70);
+  }
+  
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(`Página ${i} de ${pageCount} | ASM Gestão Clínica Pro`, 105, 290, { align: 'center' });
+  }
+  
+  doc.save(`Agendamentos_${currentPatient.name.replace(/\s+/g, '_')}.pdf`);
+}
+
+function generatePatientFinancePDF() {
+  if (!currentPatient) return;
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  doc.setFillColor(30, 58, 138);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.text('Resumo Financeiro do Paciente', 105, 20, { align: 'center' });
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(14);
+  doc.text(currentPatient.name, 20, 45);
+  
+  doc.save(`Financeiro_${currentPatient.name.replace(/\s+/g, '_')}.pdf`);
+}
+
+// ==================== FINANCEIRO ====================
+function renderTransactions() {
+  const tbody = document.getElementById('transactionsList');
+  
+  if (transactions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400">Nenhuma transação este mês</td></tr>';
+  } else {
+    tbody.innerHTML = transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).map(t => `
+      <tr class="border-b hover:bg-gray-50">
+        <td class="px-4 py-2">${formatDate(t.date)}</td>
+        <td class="px-4 py-2">${t.description}</td>
+        <td class="px-4 py-2"><span class="px-2 py-1 rounded text-xs bg-gray-100">${t.category}</span></td>
+        <td class="px-4 py-2 text-right font-semibold ${t.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+          ${t.type === 'income' ? '+' : '-'} ${formatMoney(t.amount)}
+        </td>
+      </tr>
+    `).join('');
+  }
+  
+  // Update summary
+  const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  
+  document.getElementById('monthIncome').textContent = formatMoney(income);
+  document.getElementById('monthExpense').textContent = formatMoney(expense);
+  document.getElementById('monthBalance').textContent = formatMoney(income - expense);
+}
+
+function openTransactionModal(type) {
+  document.getElementById('transactionForm').reset();
+  document.getElementById('transTitle').textContent = type === 'income' ? 'Nova Receita' : 'Nova Despesa';
+  document.getElementById('transDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('transactionModal').dataset.type = type;
+  document.getElementById('transactionModal').classList.remove('hidden');
+}
+
+document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const type = document.getElementById('transactionModal').dataset.type;
+  
+  const transaction = {
+    description: document.getElementById('transDescription').value,
+    amount: parseFloat(document.getElementById('transAmount').value),
+    date: document.getElementById('transDate').value,
+    category: document.getElementById('transCategory').value,
+    type: type,
+    month: currentMonth.getMonth(),
+    year: currentMonth.getFullYear(),
+    createdAt: new Date()
+  };
+  
+  try {
+    await db.collection('clinics').doc(currentClinic.cpf).collection('users').doc(currentUser.id).collection('transactions').add(transaction);
+    transactions.push(transaction);
+    closeModal('transactionModal');
+    renderTransactions();
+    updateDashboard();
+    
+  } catch (error) {
+    console.error('Error saving transaction:', error);
+    alert('Erro ao salvar transação.');
+  }
+});
+
+// ==================== UTILITIES ====================
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.add('hidden');
+}
+
+function formatMoney(value) {
+  return 'R$ ' + (value || 0).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+}
+
+// CPF mask
+document.getElementById('loginCPF')?.addEventListener('input', function(e) {
+  let value = e.target.value.replace(/\D/g, '');
+  if (value.length > 11) value = value.slice(0, 11);
+  if (value.length > 9) {
+    value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+  } else if (value.length > 6) {
+    value = value.replace(/^(\d{3})(\d{3})(\d{3})$/, '$1.$2.$3');
+  } else if (value.length > 3) {
+    value = value.replace(/^(\d{3})(\d{3})$/, '$1.$2');
+  }
+  e.target.value = value;
+});
+
+// Clinic form
+document.getElementById('clinicForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const clinicData = {
+    clinicName: document.getElementById('clinicName').value,
+    phone: document.getElementById('clinicPhone').value,
+    email: document.getElementById('clinicEmail').value,
+    address: document.getElementById('clinicAddress').value,
+    updatedAt: new Date()
+  };
+  
+  try {
+    await db.collection('clinics').doc(currentClinic.cpf).update(clinicData);
+    Object.assign(currentClinic, clinicData);
+    alert('Dados da clínica salvos com sucesso!');
+    
+  } catch (error) {
+    console.error('Error saving clinic:', error);
+    alert('Erro ao salvar dados.');
+  }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  // Set current date
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('input[type="date"]').forEach(input => {
+    if (!input.value) input.value = today;
+  });
+});
+</script>
+</body>
+</html>
