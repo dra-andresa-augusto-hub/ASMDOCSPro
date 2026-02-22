@@ -642,20 +642,63 @@
             accent-color: var(--azul-marinho);
         }
         
-        /* EVOLUÇÃO */
-        .evolucao-item {
-            background: var(--cinza-claro);
+        /* EVOLUÇÃO - NOVO MODELO UNIVERSAL */
+        .evolucao-campo {
+            background: white;
             padding: 15px;
             border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            margin-bottom: 15px;
+        }
+        
+        .evolucao-campo h5 {
+            color: var(--azul-marinho);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--dourado);
+        }
+        
+        /* CONTRATO - NOVO ESTILO */
+        .clausula-contrato {
+            background: var(--cinza-claro);
+            padding: 15px;
+            border-radius: 10px;
             margin-bottom: 15px;
             border-left: 4px solid var(--dourado);
         }
         
-        .evolucao-header {
-            display: flex;
-            gap: 10px;
+        .clausula-contrato h5 {
+            color: var(--azul-marinho);
+            font-size: 0.95rem;
             margin-bottom: 10px;
-            align-items: center;
+        }
+        
+        .clausula-contrato p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .assinatura-dupla {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .assinatura-box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .assinatura-box h5 {
+            color: var(--azul-marinho);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            text-align: center;
         }
         
         /* PLANO ALIMENTAR - NUTRIÇÃO */
@@ -1028,6 +1071,9 @@
                 height: 30px;
                 font-size: 0.8rem;
             }
+            .assinatura-dupla {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -1271,7 +1317,7 @@ let currentDocType = null;
 let nivelDorSelecionado = null;
 let assinaturas = {};
 
-// PROFISSÕES E DOCUMENTOS
+// PROFISSÕES E DOCUMENTOS - ATUALIZADO COM MODELOS UNIVERSAIS
 const professions = {
     fisioterapia: {
         name: "Fisioterapia",
@@ -1781,13 +1827,6 @@ function loadDocumentsList() {
     });
 }
 
-function openNewDocumentForPatient() {
-    closeProntuario();
-    showSection('documents');
-    document.getElementById('docPatientSelect').value = currentPatientId;
-    updatePatientForDoc();
-}
-
 // FORMULÁRIOS DE DOCUMENTOS
 function openDocumentForm(doc) {
     const patientSelect = document.getElementById('docPatientSelect');
@@ -1857,22 +1896,26 @@ function generateDocumentHTML(docType, profession, patientId) {
     // Fechar div dos dados do paciente
     html += `</div>`;
     
-    // Assinatura e botões (comum a todos)
-    html += `
-        <div class="form-card">
-            <div class="form-title">✍️ Assinatura Digital</div>
-            <div class="assinatura-section">
-                <h4>Assine com o dedo na tela abaixo:</h4>
-                <div class="signature-area">
-                    <canvas id="signatureCanvas" class="signature-pad"></canvas>
-                    <span class="signature-label">Toque e arraste para assinar</span>
-                </div>
-                <div class="btn-group" style="margin-top: 10px;">
-                    <button class="btn btn-danger btn-sm" onclick="clearSignature()" style="flex:none;">🗑️ Limpar</button>
+    // Assinatura e botões (comum a todos, exceto contrato que tem assinatura dupla)
+    if (docType !== 'contrato') {
+        html += `
+            <div class="form-card">
+                <div class="form-title">✍️ Assinatura Digital</div>
+                <div class="assinatura-section">
+                    <h4>Assine com o dedo na tela abaixo:</h4>
+                    <div class="signature-area">
+                        <canvas id="signatureCanvas" class="signature-pad"></canvas>
+                        <span class="signature-label">Toque e arraste para assinar</span>
+                    </div>
+                    <div class="btn-group" style="margin-top: 10px;">
+                        <button class="btn btn-danger btn-sm" onclick="clearSignature()" style="flex:none;">🗑️ Limpar</button>
+                    </div>
                 </div>
             </div>
-        </div>
-        
+        `;
+    }
+    
+    html += `
         <div class="btn-group">
             <button class="btn btn-success" onclick="saveAndGeneratePDF()">💾 Salvar e Gerar PDF</button>
             <button class="btn btn-secondary" onclick="closeDocumentModal()">Cancelar</button>
@@ -1885,8 +1928,340 @@ function generateDocumentHTML(docType, profession, patientId) {
 function getSpecificFormHTML(docType, profession) {
     let html = '';
     
-    // FISIOTERAPIA - Estrutura original completa
-    if (profession === 'fisioterapia') {
+    // EVOLUÇÃO - MODELO ÚNICO UNIVERSAL PARA TODAS AS PROFISSÕES
+    if (docType === 'evolucao') {
+        html += `
+            <div class="form-group">
+                <label class="form-label">Nome do Paciente</label>
+                <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
+            </div>
+            <div class="prof-row">
+                <div class="form-group">
+                    <label class="form-label">Nº da Sessão/Consulta</label>
+                    <input type="number" class="form-input" id="num-sessao" placeholder="Número">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data da Evolução</label>
+                    <input type="date" class="form-input" id="data-evolucao" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>1. Subjetivo (S) - Relato do Paciente</h5>
+                <textarea class="form-textarea" id="evolucao-s" placeholder="O que o paciente relatou sobre seu estado atual, sintomas, evolução desde a última sessão..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>2. Objetivo (O) - Achados Clínicos</h5>
+                <textarea class="form-textarea" id="evolucao-o" placeholder="Exame físico, sinais vitais, testes específicos, medidas, observações objetivas..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>3. Avaliação (A) - Análise Clínica</h5>
+                <textarea class="form-textarea" id="evolucao-a" placeholder="Interpretação dos achados, evolução do quadro clínico, resposta ao tratamento..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>4. Condutas Realizadas</h5>
+                <textarea class="form-textarea" id="condutas-realizadas" placeholder="Procedimentos, técnicas, exercícios ou intervenções aplicadas nesta sessão..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>5. Resposta do Paciente às Condutas</h5>
+                <textarea class="form-textarea" id="resposta-paciente" placeholder="Como o paciente respondeu às intervenções, tolerância, dificuldades..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>6. Metas e Objetivos Desta Sessão</h5>
+                <textarea class="form-textarea" id="metas-sessao" placeholder="Objetivos propostos para esta sessão e grau de alcance..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>7. Evolução em Relação à Sessão Anterior</h5>
+                <textarea class="form-textarea" id="evolucao-comparativa" placeholder="Comparação com a sessão anterior, progressos ou regressões observadas..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>8. Fatores que Interferiram no Tratamento</h5>
+                <textarea class="form-textarea" id="fatores-interferencia" placeholder="Aspectos que facilitaram ou dificultaram o progresso (aderência, comorbidades, contexto social)..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>9. Plano para Próxima Sessão (P)</h5>
+                <textarea class="form-textarea" id="plano-proxima" placeholder="Condutas planejadas, focos de intervenção, metas para a próxima sessão..."></textarea>
+            </div>
+            
+            <div class="evolucao-campo">
+                <h5>10. Observações Gerais e Recomendações</h5>
+                <textarea class="form-textarea" id="observacoes-gerais" placeholder="Orientações ao paciente, encaminhamentos, cuidados especiais..."></textarea>
+            </div>
+        `;
+    }
+    
+    // ALTA - MODELO ÚNICO SIMPLES PARA TODAS AS PROFISSÕES
+    else if (docType === 'alta') {
+        html += `
+            <div class="form-group">
+                <label class="form-label">Nome do Paciente</label>
+                <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
+            </div>
+            <div class="prof-row">
+                <div class="form-group">
+                    <label class="form-label">Data de Início do Tratamento</label>
+                    <input type="date" class="form-input" id="alta-data-inicio">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data da Alta</label>
+                    <input type="date" class="form-input" id="alta-data-fim" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Total de Sessões/Consultas Realizadas</label>
+                <input type="number" class="form-input" id="alta-total-sessoes" placeholder="0">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Diagnóstico Inicial</label>
+                <textarea class="form-textarea" id="alta-diagnostico-inicial" placeholder="Diagnóstico na entrada do tratamento..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Resumo do Tratamento</label>
+                <textarea class="form-textarea" id="alta-resumo-tratamento" placeholder="Principais condutas realizadas durante todo o período..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Evolução do Paciente</label>
+                <textarea class="form-textarea" id="alta-evolucao" placeholder="Descrição da evolução clínica desde o início até a alta..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Condição na Alta</label>
+                <textarea class="form-textarea" id="alta-condicao" placeholder="Estado atual do paciente ao término do tratamento..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Motivo da Alta</label>
+                <select class="form-select" id="alta-motivo">
+                    <option value="objetivos">Objetivos terapêuticos alcançados</option>
+                    <option value="parcial">Alta parcial (melhora significativa)</option>
+                    <option value="solicitacao">Alta a pedido do paciente</option>
+                    <option value="encaminhamento">Encaminhamento para outro profissional/especialidade</option>
+                    <option value="abandono">Abandono do tratamento</option>
+                    <option value="mudanca">Mudança de endereço/cidade</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Orientações Finais</label>
+                <textarea class="form-textarea" id="alta-orientacoes" placeholder="Recomendações para manutenção dos resultados, cuidados preventivos, sinais de alerta..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Encaminhamentos (se houver)</label>
+                <textarea class="form-textarea" id="alta-encaminhamentos" placeholder="Para qual profissional ou serviço foi encaminhado..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Retorno/Controle</label>
+                <textarea class="form-textarea" id="alta-retorno" placeholder="Necessidade de retorno para controle, reavaliação..."></textarea>
+            </div>
+        `;
+    }
+    
+    // CONTRATO - NOVO MÓDULO COM CLÁUSULAS JURÍDICAS VÁLIDAS
+    else if (docType === 'contrato') {
+        html += `
+            <div class="form-group">
+                <label class="form-label">Nome do Contratante (Paciente/Responsável Legal)</label>
+                <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
+            </div>
+            <div class="prof-row">
+                <div class="form-group">
+                    <label class="form-label">CPF</label>
+                    <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00" oninput="maskCPF(event)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">RG</label>
+                    <input type="text" class="form-input" id="contratante-rg" placeholder="Nº do RG">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Endereço Completo</label>
+                <input type="text" class="form-input" id="contratante-endereco" placeholder="Rua, número, bairro, cidade, estado, CEP">
+            </div>
+            <div class="prof-row">
+                <div class="form-group">
+                    <label class="form-label">Telefone</label>
+                    <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000" oninput="maskPhone(event)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="contratante-email" placeholder="email@exemplo.com">
+                </div>
+            </div>
+            
+            <div class="form-card" style="margin-top:20px;">
+                <div class="form-title">📋 Dados do Serviço</div>
+                <div class="form-group">
+                    <label class="form-label">Queixa Principal / Diagnóstico</label>
+                    <textarea class="form-textarea" id="contrato-queixa" placeholder="Descrição da condição clínica ou objetivo do tratamento..."></textarea>
+                </div>
+                <div class="prof-row">
+                    <div class="form-group">
+                        <label class="form-label">Modalidade de Atendimento</label>
+                        <select class="form-select" id="contrato-modalidade">
+                            <option value="presencial">Presencial (Clínica/Consultório)</option>
+                            <option value="domiciliar">Domiciliar</option>
+                            <option value="online">Online/Teleatendimento</option>
+                            <option value="hibrido">Híbrido (Presencial + Online)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Valor por Sessão (R$)</label>
+                        <input type="number" class="form-input" id="contrato-valor" step="0.01" placeholder="0,00">
+                    </div>
+                </div>
+                <div class="prof-row">
+                    <div class="form-group">
+                        <label class="form-label">Frequência Semanal</label>
+                        <select class="form-select" id="contrato-frequencia">
+                            <option value="1x">1x por semana</option>
+                            <option value="2x">2x por semana</option>
+                            <option value="3x">3x por semana</option>
+                            <option value="4x">4x ou mais por semana</option>
+                            <option value="quinzenal">Quinzenal</option>
+                            <option value="mensal">Mensal</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Duração da Sessão (minutos)</label>
+                        <input type="number" class="form-input" id="contrato-duracao" placeholder="Ex: 50">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select class="form-select" id="contrato-pagamento">
+                        <option value="pix">Pix</option>
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="transferencia">Transferência Bancária</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Dia do Vencimento</label>
+                    <select class="form-select" id="contrato-vencimento">
+                        <option value="na_sessao">No dia da sessão</option>
+                        <option value="5">Todo dia 5</option>
+                        <option value="10">Todo dia 10</option>
+                        <option value="15">Todo dia 15</option>
+                        <option value="20">Todo dia 20</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-card">
+                <div class="form-title">📄 Cláusulas do Contrato</div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 1 - IDENTIFICAÇÃO DAS PARTES</h5>
+                    <p><strong>CONTRATANTE:</strong> <span id="texto-contratante-nome"></span>, CPF: <span id="texto-contratante-cpf"></span>, residente em <span id="texto-contratante-endereco"></span>.</p>
+                    <p style="margin-top:8px;"><strong>CONTRATADO:</strong> ${currentUser.name}, ${currentProfession.registro}: ${currentUser.registro}, endereço profissional informado no cabeçalho.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 2 - OBJETO</h5>
+                    <p>O presente contrato tem por objeto a prestação de serviços ${currentProfession.name.toLowerCase()} pelo CONTRATADO ao CONTRATANTE, conforme avaliação profissional e plano terapêutico estabelecido.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 3 - OBRIGAÇÕES DO CONTRATADO</h5>
+                    <p>• Realizar avaliação profissional inicial;<br>
+                    • Estabelecer diagnóstico e plano terapêutico adequado;<br>
+                    • Executar procedimentos com ética, técnica e sigilo profissional;<br>
+                    • Manter prontuário atualizado e fornecer documentação necessária;<br>
+                    • Informar sobre riscos, benefícios e alternativas do tratamento.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 4 - OBRIGAÇÕES DO CONTRATANTE</h5>
+                    <p>• Comparecer às sessões agendadas no dia e horário combinados;<br>
+                    • Informar mudanças no estado de saúde e medicamentos em uso;<br>
+                    • Efetuar pagamentos conforme estabelecido neste contrato;<br>
+                    • Seguir as orientações profissionais prescritas;<br>
+                    • Comunicar com antecedência impossibilidade de comparecimento.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 5 - CANCELAMENTOS E FALTAS</h5>
+                    <p><strong>5.1</strong> O CONTRATANTE poderá cancelar ou remarcar sessões mediante aviso prévio de <strong>6 horas</strong> de antecedência.<br><br>
+                    <strong>5.2</strong> Cancelamentos com menos de 6 horas de antecedência ou faltas sem comunicação serão cobradas em <strong>20%</strong> do valor da sessão.<br><br>
+                    <strong>5.3</strong> Após <strong>3 faltas consecutivas</strong> sem justificativa, o CONTRATADO poderá rescindir o contrato unilateralmente.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 6 - RESCISÃO E QUEBRA DE CONTRATO</h5>
+                    <p><strong>6.1</strong> O CONTRATANTE poderá rescindir este contrato a qualquer momento, mediante solicitação por escrito.<br><br>
+                    <strong>6.2</strong> Em caso de rescisão sem justificativa médica ou de força maior antes de completar <strong>50% do tratamento previsto</strong>, será cobrada multa de <strong>50%</strong> sobre o valor total das sessões restantes.<br><br>
+                    <strong>6.3</strong> O CONTRATADO poderá rescindir o contrato em caso de violação das obrigações pelo CONTRATANTE ou impossibilidade técnica de continuidade.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 7 - SIGILO PROFISSIONAL</h5>
+                    <p>O CONTRATADO compromete-se a manter sigilo absoluto sobre todas as informações do CONTRATANTE, conforme código de ética profissional e legislação vigente (LGPD).</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 8 - VIGÊNCIA</h5>
+                    <p>Este contrato entra em vigor na data de assinatura e permanecerá válido até o término do tratamento ou rescisão por qualquer das partes conforme cláusulas anteriores.</p>
+                </div>
+                
+                <div class="clausula-contrato">
+                    <h5>CLÁUSULA 9 - DISPOSIÇÕES GERAIS</h5>
+                    <p>• O não exercício de direitos não implica renúncia;<br>
+                    • Acordos verbais só terão validade se confirmados por escrito;<br>
+                    • Questões não previstas serão resolvidas conforme legislação vigente.</p>
+                </div>
+            </div>
+            
+            <div class="form-card">
+                <div class="form-title">✍️ Assinaturas</div>
+                <p style="margin-bottom:15px;font-size:0.9rem;">Local e data: ___________________, ${new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: 'long', year: 'numeric'})}</p>
+                
+                <div class="assinatura-dupla">
+                    <div class="assinatura-box">
+                        <h5>CONTRATANTE (Paciente/Responsável)</h5>
+                        <div class="signature-area" style="margin-bottom:10px;">
+                            <canvas id="signatureCanvasContratante" class="signature-pad" style="height:120px;"></canvas>
+                            <span class="signature-label">Assinatura do Contratante</span>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="clearSignatureById('signatureCanvasContratante')" style="width:100%;">🗑️ Limpar</button>
+                        <p style="margin-top:10px;font-size:0.85rem;text-align:center;">
+                            <span id="assinatura-contratante-nome"></span><br>
+                            CPF: <span id="assinatura-contratante-cpf"></span>
+                        </p>
+                    </div>
+                    
+                    <div class="assinatura-box">
+                        <h5>CONTRATADO (${currentProfession.name})</h5>
+                        <div class="signature-area" style="margin-bottom:10px;">
+                            <canvas id="signatureCanvasProfissional" class="signature-pad" style="height:120px;"></canvas>
+                            <span class="signature-label">Assinatura do Profissional</span>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="clearSignatureById('signatureCanvasProfissional')" style="width:100%;">🗑️ Limpar</button>
+                        <p style="margin-top:10px;font-size:0.85rem;text-align:center;">
+                            ${currentUser.name}<br>
+                            ${currentProfession.registro}: ${currentUser.registro}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // FISIOTERAPIA - Anamnese e Avaliação específicas (mantidas como estavam)
+    else if (profession === 'fisioterapia') {
         if (docType === 'anamnese' || docType === 'avaliacao') {
             html += `
                 <div class="form-group">
@@ -2038,183 +2413,6 @@ function getSpecificFormHTML(docType, profession) {
                     </div>
                 `;
             }
-        } else if (docType === 'evolucao') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Nº de Sessões</label>
-                        <input type="number" class="form-input" id="num-sessao" placeholder="Sessão nº">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Frequência</label>
-                        <input type="text" class="form-input" id="frequencia" placeholder="Ex: 2x/semana">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Evolução do Paciente</label>
-                    <textarea class="form-textarea" id="evolucao-texto" placeholder="Descreva a evolução do paciente nesta sessão..." style="min-height:200px;"></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Condutas Realizadas</label>
-                    <textarea class="form-textarea" id="condutas" placeholder="Procedimentos e técnicas utilizadas..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Resposta ao Tratamento</label>
-                    <textarea class="form-textarea" id="resposta" placeholder="Avaliação da resposta do paciente..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Plano para Próxima Sessão</label>
-                    <textarea class="form-textarea" id="plano-proxima" placeholder="Condutas planejadas..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'contrato') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Contratante (Paciente/Responsável)</label>
-                    <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">RG</label>
-                        <input type="text" class="form-input" id="contratante-rg" placeholder="Nº do RG">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Endereço Completo</label>
-                    <input type="text" class="form-input" id="contratante-endereco" placeholder="Rua, número, bairro, cidade, estado">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-input" id="contratante-email" placeholder="email@exemplo.com">
-                    </div>
-                </div>
-                
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📋 Dados do Serviço</div>
-                    <div class="form-group">
-                        <label class="form-label">Queixa Principal / Diagnóstico</label>
-                        <textarea class="form-textarea" id="contrato-queixa" placeholder="Descrição da condição clínica..."></textarea>
-                    </div>
-                    <div class="prof-row">
-                        <div class="form-group">
-                            <label class="form-label">Modalidade</label>
-                            <select class="form-select" id="contrato-modalidade">
-                                <option value="clinica">Clínica/Consultório</option>
-                                <option value="domiciliar">Domiciliar</option>
-                                <option value="online">Online/Teleatendimento</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Valor por Sessão (R$)</label>
-                            <input type="number" class="form-input" id="contrato-valor" step="0.01" placeholder="0,00">
-                        </div>
-                    </div>
-                    <div class="prof-row">
-                        <div class="form-group">
-                            <label class="form-label">Frequência</label>
-                            <input type="text" class="form-input" id="contrato-frequencia" placeholder="Ex: 2x por semana">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Duração da Sessão (min)</label>
-                            <input type="number" class="form-input" id="contrato-duracao" placeholder="60">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Forma de Pagamento</label>
-                        <select class="form-select" id="contrato-pagamento">
-                            <option value="pix">Pix</option>
-                            <option value="dinheiro">Dinheiro</option>
-                            <option value="cartao">Cartão</option>
-                            <option value="transferencia">Transferência</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-card">
-                    <div class="form-title">📄 Termos do Contrato</div>
-                    <div style="background:var(--cinza-claro);padding:15px;border-radius:10px;font-size:0.9rem;line-height:1.6;max-height:300px;overflow-y:auto;">
-                        <p><strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS FISIOTERAPÊUTICOS</strong></p>
-                        <p><strong>1) IDENTIFICAÇÃO DAS PARTES</strong></p>
-                        <p>CONTRATANTE: <span id="texto-contratante"></span></p>
-                        <p>CONTRATADO: ${currentUser.name} - ${currentProfession.registro}: ${currentUser.registro}</p>
-                        <p><strong>2) OBJETO</strong></p>
-                        <p>Prestação de serviços fisioterapêuticos conforme avaliação e plano terapêutico.</p>
-                        <p><strong>3) OBRIGAÇÕES DO CONTRATADO</strong></p>
-                        <p>• Realizar avaliação fisioterapêutica inicial<br>
-                        • Estabelecer diagnóstico e plano terapêutico<br>
-                        • Executar procedimentos com ética e técnica<br>
-                        • Manter sigilo profissional</p>
-                        <p><strong>4) OBRIGAÇÕES DO CONTRATANTE</strong></p>
-                        <p>• Comparecer às sessões agendadas<br>
-                        • Informar mudanças no estado de saúde<br>
-                        • Efetuar pagamentos conforme combinado<br>
-                        • Seguir orientações prescritas</p>
-                        <p><strong>5) CANCELAMENTOS</strong></p>
-                        <p>Cancelamentos devem ser comunicados com 24h de antecedência.</p>
-                        <p><strong>6) VIGÊNCIA</strong></p>
-                        <p>Este contrato entra em vigor na data de assinatura.</p>
-                    </div>
-                </div>
-            `;
-        } else if (docType === 'alta') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Data de Início do Tratamento</label>
-                        <input type="date" class="form-input" id="alta-data-inicio">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data da Alta</label>
-                        <input type="date" class="form-input" id="alta-data-fim" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Diagnóstico de Entrada</label>
-                    <textarea class="form-textarea" id="alta-diagnostico-entrada" placeholder="Diagnóstico inicial..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Condutas Realizadas (Resumo)</label>
-                    <textarea class="form-textarea" id="alta-condutas" placeholder="Principais procedimentos realizados durante o tratamento..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Evolução do Paciente</label>
-                    <textarea class="form-textarea" id="alta-evolucao" placeholder="Descrição da evolução clínica..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Condição na Alta</label>
-                    <textarea class="form-textarea" id="alta-condicao" placeholder="Estado atual do paciente..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Motivo da Alta</label>
-                    <select class="form-select" id="alta-motivo">
-                        <option value="objetivos">Objetivos terapêuticos alcançados</option>
-                        <option value="solicitacao">Alta a pedido do paciente</option>
-                        <option value="encaminhamento">Encaminhamento para outro profissional</option>
-                        <option value="abandono">Abandono do tratamento</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Orientações Finais</label>
-                    <textarea class="form-textarea" id="alta-orientacoes" placeholder="Orientações para manutenção dos resultados..."></textarea>
-                </div>
-            `;
         } else if (docType === 'atestado') {
             html += `
                 <div class="form-group">
@@ -2321,7 +2519,7 @@ function getSpecificFormHTML(docType, profession) {
                     </div>
                     <div class="form-group">
                         <label class="form-label">Data</label>
-                        <input type="date" class="form-input" id="comparecimento-data" value="${today}">
+                        <input type="date" class="form-input" id="comparecimento-data" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                 </div>
                 <div class="prof-row">
@@ -2462,7 +2660,7 @@ function getSpecificFormHTML(docType, profession) {
         }
     }
     
-    // NUTRIÇÃO - Estrutura completa equivalente
+    // NUTRIÇÃO - Anamnese e Avaliação específicas (mantidas)
     else if (profession === 'nutricao') {
         if (docType === 'anamnese') {
             html += `
@@ -2732,7 +2930,7 @@ function getSpecificFormHTML(docType, profession) {
                 </div>
                 <div class="form-group">
                     <label class="form-label">Data do Plano</label>
-                    <input type="date" class="form-input" id="plano-data" value="${today}">
+                    <input type="date" class="form-input" id="plano-data" value="${new Date().toISOString().split('T')[0]}">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Vigência do Plano</label>
@@ -2824,169 +3022,6 @@ function getSpecificFormHTML(docType, profession) {
                     <textarea class="form-textarea" id="plano-orientacoes" placeholder="Orientações sobre preparo, substituições, suplementação..."></textarea>
                 </div>
             `;
-        } else if (docType === 'evolucao') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Nº da Consulta</label>
-                        <input type="number" class="form-input" id="consulta-numero">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data</label>
-                        <input type="date" class="form-input" id="consulta-data" value="${today}">
-                    </div>
-                </div>
-                
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📏 Medidas Antropométricas</div>
-                    <div class="prof-row">
-                        <div class="form-group">
-                            <label class="form-label">Peso Atual (kg)</label>
-                            <input type="number" class="form-input" id="evo-peso" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">% Gordura</label>
-                            <input type="number" class="form-input" id="evo-gordura" step="0.1">
-                        </div>
-                    </div>
-                    <div class="prof-row">
-                        <div class="form-group">
-                            <label class="form-label">Circ. Cintura (cm)</label>
-                            <input type="number" class="form-input" id="evo-cintura" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Circ. Quadril (cm)</label>
-                            <input type="number" class="form-input" id="evo-quadril" step="0.1">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Evolução da Adesão ao Plano</label>
-                    <textarea class="form-textarea" id="evo-adesao" placeholder="Como está sendo a adesão ao plano alimentar..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Dificuldades Encontradas</label>
-                    <textarea class="form-textarea" id="evo-dificuldades" placeholder="Dificuldades relatadas pelo paciente..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Resultados Alcançados</label>
-                    <textarea class="form-textarea" id="evo-resultados" placeholder="Resultados desde a última consulta..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Ajustes no Plano Alimentar</label>
-                    <textarea class="form-textarea" id="evo-ajustes" placeholder="Modificações realizadas no plano..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Orientações Realizadas</label>
-                    <textarea class="form-textarea" id="evo-orientacoes" placeholder="Novas orientações nutricionais..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Próxima Consulta / Meta</label>
-                    <textarea class="form-textarea" id="evo-proxima" placeholder="Metas para o próximo período..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'contrato') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Contratante</label>
-                    <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000">
-                    </div>
-                </div>
-                
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📋 Dados do Serviço Nutricional</div>
-                    <div class="form-group">
-                        <label class="form-label">Tipo de Atendimento</label>
-                        <select class="form-select" id="contrato-tipo">
-                            <option value="consulta">Consulta Avulsa</option>
-                            <option value="pacote5">Pacote 5 Consultas</option>
-                            <option value="pacote10">Pacote 10 Consultas</option>
-                            <option value="acompanhamento">Acompanhamento Mensal</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Valor Total (R$)</label>
-                        <input type="number" class="form-input" id="contrato-valor" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Forma de Pagamento</label>
-                        <select class="form-select" id="contrato-pagamento">
-                            <option value="pix">Pix</option>
-                            <option value="cartao">Cartão</option>
-                            <option value="dinheiro">Dinheiro</option>
-                            <option value="transferencia">Transferência</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-card">
-                    <div class="form-title">📄 Termos do Contrato</div>
-                    <div style="background:var(--cinza-claro);padding:15px;border-radius:10px;font-size:0.9rem;line-height:1.6;">
-                        <p><strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE NUTRIÇÃO</strong></p>
-                        <p style="margin-top:10px;"><strong>1.</strong> O nutricionista se compromete a realizar a consulta com base na avaliação individual, elaborando plano alimentar personalizado.</p>
-                        <p><strong>2.</strong> O paciente se compromete a comparecer às consultas agendadas e seguir as orientações nutricionais.</p>
-                        <p><strong>3.</strong> Cancelamentos devem ser comunicados com 24h de antecedência.</p>
-                        <p><strong>4.</strong> O plano alimentar é de uso exclusivo do paciente e não pode ser repassado a terceiros.</p>
-                    </div>
-                </div>
-            `;
-        } else if (docType === 'alta') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Data Início</label>
-                        <input type="date" class="form-input" id="alta-inicio">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data Alta</label>
-                        <input type="date" class="form-input" id="alta-fim" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Motivo da Alta</label>
-                    <select class="form-select" id="alta-motivo">
-                        <option value="objetivos">Objetivos alcançados</option>
-                        <option value="parcial">Objetivos parcialmente alcançados</option>
-                        <option value="solicitacao">A pedido do paciente</option>
-                        <option value="abandono">Abandono</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Resumo da Evolução Nutricional</label>
-                    <textarea class="form-textarea" id="alta-evolucao" placeholder="Evolução desde o início do acompanhamento..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Resultados Alcançados</label>
-                    <textarea class="form-textarea" id="alta-resultados" placeholder="Peso, medidas, hábitos..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Orientações de Manutenção</label>
-                    <textarea class="form-textarea" id="alta-manutencao" placeholder="Orientações para manutenção dos resultados..."></textarea>
-                </div>
-            `;
         } else if (docType === 'atestado') {
             html += `
                 <div class="form-group">
@@ -3018,7 +3053,7 @@ function getSpecificFormHTML(docType, profession) {
         }
     }
     
-    // PSICOLOGIA - Estrutura completa
+    // PSICOLOGIA - Anamnese e Avaliação específicas (mantidas)
     else if (profession === 'psicologia') {
         if (docType === 'anamnese') {
             html += `
@@ -3193,96 +3228,6 @@ function getSpecificFormHTML(docType, profession) {
                     <textarea class="form-textarea" id="recomendacoes" placeholder="Encaminhamentos, intervenções sugeridas..."></textarea>
                 </div>
             `;
-        } else if (docType === 'evolucao') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Nº da Sessão</label>
-                        <input type="number" class="form-input" id="sessao-numero">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data</label>
-                        <input type="date" class="form-input" id="sessao-data" value="${today}">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Tema/Assunto Abordado</label>
-                    <textarea class="form-textarea" id="sessao-tema" placeholder="Principais tópicos da sessão..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Dinâmica da Sessão</label>
-                    <textarea class="form-textarea" id="sessao-dinamica" placeholder="Como se desenvolveu o atendimento..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Comportamento e Participação do Paciente</label>
-                    <textarea class="form-textarea" id="sessao-comportamento" placeholder="Engajamento, resistências, avanços..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Intervenções Realizadas</label>
-                    <textarea class="form-textarea" id="sessao-intervencoes" placeholder="Técnicas e estratégias utilizadas..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Insight e Evolução do Paciente</label>
-                    <textarea class="form-textarea" id="sessao-evolucao" placeholder="Percepções, mudanças observadas..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Plano para Próxima Sessão</label>
-                    <textarea class="form-textarea" id="sessao-plano" placeholder="Focos para o próximo atendimento..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'contrato') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente/Responsável</label>
-                    <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000">
-                    </div>
-                </div>
-                
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📋 Termos do Contrato Psicológico</div>
-                    <div style="background:var(--cinza-claro);padding:15px;border-radius:10px;font-size:0.9rem;line-height:1.6;">
-                        <p><strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS PSICOLÓGICOS</strong></p>
-                        <p style="margin-top:10px;"><strong>1.</strong> O psicólogo se compromete a manter sigilo absoluto sobre todo o conteúdo das sessões, conforme Código de Ética Profissional.</p>
-                        <p><strong>2.</strong> As sessões terão duração de 50 minutos, em frequência acordada entre as partes.</p>
-                        <p><strong>3.</strong> Faltas sem aviso prévio de 24h serão cobradas.</p>
-                        <p><strong>4.</strong> O paciente pode solicitar encerramento do tratamento a qualquer momento.</p>
-                        <p><strong>5.</strong> Em caso de risco iminente à vida do paciente ou de terceiros, o sigilo poderá ser rompido conforme previsto em lei.</p>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Valor da Sessão (R$)</label>
-                    <input type="number" class="form-input" id="contrato-valor" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Frequência</label>
-                    <select class="form-select" id="contrato-frequencia">
-                        <option value="1">1x por semana</option>
-                        <option value="2">2x por semana</option>
-                        <option value="3">3x por semana</option>
-                        <option value="quinzenal">Quinzenal</option>
-                    </select>
-                </div>
-            `;
         } else if (docType === 'relatorio') {
             html += `
                 <div class="form-group">
@@ -3322,49 +3267,6 @@ function getSpecificFormHTML(docType, profession) {
                     </div>
                 </div>
             `;
-        } else if (docType === 'alta') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Início do Tratamento</label>
-                        <input type="date" class="form-input" id="alta-inicio">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data da Alta</label>
-                        <input type="date" class="form-input" id="alta-fim" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Total de Sessões Realizadas</label>
-                    <input type="number" class="form-input" id="alta-total-sessoes">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Motivo do Encerramento</label>
-                    <select class="form-select" id="alta-motivo">
-                        <option value="alta">Alta terapêutica (objetivos alcançados)</option>
-                        <option value="parcial">Alta parcial (melhora significativa)</option>
-                        <option value="pedido">A pedido do paciente</option>
-                        <option value="abandono">Abandono</option>
-                        <option value="encaminhamento">Encaminhamento para outro profissional</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Evolução do Processo Terapêutico</label>
-                    <textarea class="form-textarea" id="alta-evolucao" placeholder="Resumo da trajetória terapêutica..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Estado Atual do Paciente</label>
-                    <textarea class="form-textarea" id="alta-estado" placeholder="Condição atual, recursos desenvolvidos..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Recomendações Finais</label>
-                    <textarea class="form-textarea" id="alta-recomendacoes" placeholder="Orientações para manutenção dos ganhos..."></textarea>
-                </div>
-            `;
         } else if (docType === 'atestado') {
             html += `
                 <div class="form-group">
@@ -3396,7 +3298,7 @@ function getSpecificFormHTML(docType, profession) {
         }
     }
     
-    // MEDICINA - Estrutura completa
+    // MEDICINA - Anamnese e Avaliação específicas (mantidas)
     else if (profession === 'medicina') {
         if (docType === 'anamnese') {
             html += `
@@ -3644,74 +3546,6 @@ function getSpecificFormHTML(docType, profession) {
                     <textarea class="form-textarea" id="conduta" placeholder="Conduta médica..."></textarea>
                 </div>
             `;
-        } else if (docType === 'evolucao') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Nº do Prontuário</label>
-                    <input type="text" class="form-input" id="prontuario-numero">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Setor/Leito</label>
-                    <input type="text" class="form-input" id="setor-leito" placeholder="Ex: Enfermaria A - Leito 12">
-                </div>
-                
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">🩺 Evolução Médica</div>
-                    <div class="form-group">
-                        <label class="form-label">Subjetivo (S)</label>
-                        <textarea class="form-textarea" id="evolucao-s" placeholder="O que o paciente relata..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Objetivo (O)</label>
-                        <textarea class="form-textarea" id="evolucao-o" placeholder="Exame físico, sinais vitais, exames..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Avaliação (A)</label>
-                        <textarea class="form-textarea" id="evolucao-a" placeholder="Análise e diagnóstico..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Plano (P)</label>
-                        <textarea class="form-textarea" id="evolucao-p" placeholder="Conduta, medicamentos, exames..."></textarea>
-                    </div>
-                </div>
-            `;
-        } else if (docType === 'contrato') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente/Responsável</label>
-                    <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000">
-                    </div>
-                </div>
-                
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📋 Termos do Contrato Médico</div>
-                    <div style="background:var(--cinza-claro);padding:15px;border-radius:10px;font-size:0.9rem;line-height:1.6;">
-                        <p><strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS MÉDICOS</strong></p>
-                        <p style="margin-top:10px;"><strong>1.</strong> O médico se compromete a prestar atendimento conforme padrões éticos e técnicos do CFM.</p>
-                        <p><strong>2.</strong> O paciente autoriza a realização de procedimentos necessários ao diagnóstico e tratamento.</p>
-                        <p><strong>3.</strong> Fica estabelecido o valor da consulta e/ou honorários médicos conforme tabela.</p>
-                        <p><strong>4.</strong> O paciente é responsável pelo pagamento de materiais, medicamentos e exames.</p>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Valor da Consulta (R$)</label>
-                    <input type="number" class="form-input" id="contrato-valor" step="0.01">
-                </div>
-            `;
         } else if (docType === 'receituario') {
             html += `
                 <div class="form-group">
@@ -3750,47 +3584,6 @@ function getSpecificFormHTML(docType, profession) {
                 <div class="form-group">
                     <label class="form-label">Orientações Gerais</label>
                     <textarea class="form-textarea" id="orientacoes-receita" placeholder="Orientações sobre uso dos medicamentos..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'alta') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Data de Internação</label>
-                        <input type="date" class="form-input" id="alta-internacao">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data da Alta</label>
-                        <input type="date" class="form-input" id="alta-data" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Diagnóstico de Internação</label>
-                    <input type="text" class="form-input" id="alta-diagnostico" placeholder="CID-10">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Resumo da Internação</label>
-                    <textarea class="form-textarea" id="alta-resumo" placeholder="Resumo do período de internação..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Procedimentos Realizados</label>
-                    <textarea class="form-textarea" id="alta-procedimentos" placeholder="Cirurgias, exames, tratamentos..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Medicamentos de Alta</label>
-                    <textarea class="form-textarea" id="alta-medicamentos" placeholder="Prescrição de alta..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Recomendações e Orientações</label>
-                    <textarea class="form-textarea" id="alta-orientacoes" placeholder="Orientações para o pós-alta..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Retorno/Encaminhamento</label>
-                    <textarea class="form-textarea" id="alta-retorno" placeholder="Agendamento de retorno, encaminhamentos..."></textarea>
                 </div>
             `;
         } else if (docType === 'atestado') {
@@ -3864,7 +3657,7 @@ function getSpecificFormHTML(docType, profession) {
         }
     }
     
-    // FONOAUDIOLOGIA - Estrutura completa
+    // FONOAUDIOLOGIA - Anamnese e Avaliação específicas (mantidas)
     else if (profession === 'fonoaudiologia') {
         if (docType === 'anamnese') {
             html += `
@@ -4061,77 +3854,6 @@ function getSpecificFormHTML(docType, profession) {
                     <textarea class="form-textarea" id="plano-terapeutico" placeholder="Objetivos e condutas..."></textarea>
                 </div>
             `;
-        } else if (docType === 'evolucao') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Nº da Sessão</label>
-                        <input type="number" class="form-input" id="sessao-numero">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data</label>
-                        <input type="date" class="form-input" id="sessao-data" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Objetivo da Sessão</label>
-                    <input type="text" class="form-input" id="sessao-objetivo" placeholder="O que se propôs trabalhar">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Procedimentos Realizados</label>
-                    <textarea class="form-textarea" id="sessao-procedimentos" placeholder="Técnicas e atividades..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Desempenho do Paciente</label>
-                    <textarea class="form-textarea" id="sessao-desempenho" placeholder="Como se comportou, evolução..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Dificuldades Observadas</label>
-                    <textarea class="form-textarea" id="sessao-dificuldades" placeholder="Pontos a trabalhar..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Orientações Domiciliares</label>
-                    <textarea class="form-textarea" id="sessao-orientacoes" placeholder="Tarefas para casa..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Próxima Sessão</label>
-                    <textarea class="form-textarea" id="sessao-proxima" placeholder="Objetivos para a próxima..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'contrato') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Responsável/Paciente</label>
-                    <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000">
-                    </div>
-                </div>
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📋 Termos do Contrato</div>
-                    <div style="background:var(--cinza-claro);padding:15px;border-radius:10px;font-size:0.9rem;line-height:1.6;">
-                        <p><strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS FONOAUDIOLÓGICOS</strong></p>
-                        <p style="margin-top:10px;"><strong>1.</strong> O fonoaudiólogo se compromete a realizar avaliação e tratamento conforme normas técnicas.</p>
-                        <p><strong>2.</strong> O paciente/responsável compromete-se a comparecer às sessões regularmente.</p>
-                        <p><strong>3.</strong> Faltas sem aviso prévio serão cobradas.</p>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Valor da Sessão (R$)</label>
-                    <input type="number" class="form-input" id="contrato-valor" step="0.01">
-                </div>
-            `;
         } else if (docType === 'relatorio') {
             html += `
                 <div class="form-group">
@@ -4153,43 +3875,6 @@ function getSpecificFormHTML(docType, profession) {
                 <div class="form-group">
                     <label class="form-label">Conclusão e Recomendações</label>
                     <textarea class="form-textarea" id="rel-conclusao" placeholder="Conclusões técnicas..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'alta') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Início do Tratamento</label>
-                        <input type="date" class="form-input" id="alta-inicio">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data da Alta</label>
-                        <input type="date" class="form-input" id="alta-data" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Total de Sessões</label>
-                    <input type="number" class="form-input" id="alta-sessoes">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Diagnóstico de Entrada</label>
-                    <input type="text" class="form-input" id="alta-diagnostico-entrada">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Evolução do Tratamento</label>
-                    <textarea class="form-textarea" id="alta-evolucao" placeholder="Descrição da evolução..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Condição na Alta</label>
-                    <textarea class="form-textarea" id="alta-condicao" placeholder="Estado atual..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Recomendações</label>
-                    <textarea class="form-textarea" id="alta-recomendacoes" placeholder="Orientações finais..."></textarea>
                 </div>
             `;
         } else if (docType === 'atestado') {
@@ -4223,7 +3908,7 @@ function getSpecificFormHTML(docType, profession) {
         }
     }
     
-    // TERAPIA OCUPACIONAL - Estrutura completa
+    // TERAPIA OCUPACIONAL - Anamnese e Avaliação específicas (mantidas)
     else if (profession === 'terapiaocupacional') {
         if (docType === 'anamnese') {
             html += `
@@ -4428,81 +4113,6 @@ function getSpecificFormHTML(docType, profession) {
                     <textarea class="form-textarea" id="plano-intervencao" placeholder="Estratégias e abordagens..."></textarea>
                 </div>
             `;
-        } else if (docType === 'evolucao') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Nº da Sessão</label>
-                        <input type="number" class="form-input" id="sessao-numero">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data</label>
-                        <input type="date" class="form-input" id="sessao-data" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Objetivos da Sessão</label>
-                    <textarea class="form-textarea" id="sessao-objetivos" placeholder="O que se propôs trabalhar..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Atividades Realizadas</label>
-                    <textarea class="form-textarea" id="sessao-atividades" placeholder="Descrição das atividades..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Desempenho do Paciente</label>
-                    <textarea class="form-textarea" id="sessao-desempenho" placeholder="Como se saiu, progressos..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Estratégias Utilizadas</label>
-                    <textarea class="form-textarea" id="sessao-estrategias" placeholder="Adaptações, recursos..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Dificuldades e Soluções</label>
-                    <textarea class="form-textarea" id="sessao-dificuldades" placeholder="Desafios e como foram superados..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Orientações aos Cuidadores</label>
-                    <textarea class="form-textarea" id="sessao-orientacoes" placeholder="Sugestões para casa..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Próxima Sessão</label>
-                    <textarea class="form-textarea" id="sessao-proxima" placeholder="Planejamento..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'contrato') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Responsável/Paciente</label>
-                    <input type="text" class="form-input" id="contratante-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-input" id="contratante-cpf" placeholder="000.000.000-00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Telefone</label>
-                        <input type="text" class="form-input" id="contratante-telefone" placeholder="(00) 00000-0000">
-                    </div>
-                </div>
-                <div class="form-card" style="margin-top:20px;">
-                    <div class="form-title">📋 Termos do Contrato</div>
-                    <div style="background:var(--cinza-claro);padding:15px;border-radius:10px;font-size:0.9rem;line-height:1.6;">
-                        <p><strong>CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE TERAPIA OCUPACIONAL</strong></p>
-                        <p style="margin-top:10px;"><strong>1.</strong> O terapeuta ocupacional se compromete a realizar avaliação e intervenção conforme princípios da TO.</p>
-                        <p><strong>2.</strong> O paciente/responsável compromete-se a comparecer às sessões e seguir orientações.</p>
-                        <p><strong>3.</strong> Faltas sem aviso prévio serão cobradas.</p>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Valor da Sessão (R$)</label>
-                    <input type="number" class="form-input" id="contrato-valor" step="0.01">
-                </div>
-            `;
         } else if (docType === 'relatorio') {
             html += `
                 <div class="form-group">
@@ -4524,39 +4134,6 @@ function getSpecificFormHTML(docType, profession) {
                 <div class="form-group">
                     <label class="form-label">Conclusão e Recomendações</label>
                     <textarea class="form-textarea" id="rel-conclusao" placeholder="Conclusões técnicas..."></textarea>
-                </div>
-            `;
-        } else if (docType === 'alta') {
-            html += `
-                <div class="form-group">
-                    <label class="form-label">Nome do Paciente</label>
-                    <input type="text" class="form-input" id="paciente-nome" placeholder="Nome completo">
-                </div>
-                <div class="prof-row">
-                    <div class="form-group">
-                        <label class="form-label">Início</label>
-                        <input type="date" class="form-input" id="alta-inicio">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Data da Alta</label>
-                        <input type="date" class="form-input" id="alta-data" value="${today}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Total de Sessões</label>
-                    <input type="number" class="form-input" id="alta-sessoes">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Objetivos Alcançados</label>
-                    <textarea class="form-textarea" id="alta-objetivos" placeholder="Metas atingidas..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Evolução Funcional</label>
-                    <textarea class="form-textarea" id="alta-evolucao" placeholder="Ganhos funcionais..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Recomendações para Manutenção</label>
-                    <textarea class="form-textarea" id="alta-recomendacoes" placeholder="Orientações..."></textarea>
                 </div>
             `;
         } else if (docType === 'atestado') {
@@ -4598,6 +4175,16 @@ function initProfessionSpecificFunctions(profession, docType) {
     // Inicializar assinaturas
     initAllCanvases();
     
+    // Se for contrato, atualizar dados dinâmicos
+    if (docType === 'contrato') {
+        updateContratoDados();
+        
+        // Adicionar listeners para atualizar dados em tempo real
+        document.getElementById('contratante-nome')?.addEventListener('input', updateContratoDados);
+        document.getElementById('contratante-cpf')?.addEventListener('input', updateContratoDados);
+        document.getElementById('contratante-endereco')?.addEventListener('input', updateContratoDados);
+    }
+    
     // Inicializar funções específicas
     if (profession === 'fisioterapia' && (docType === 'anamnese' || docType === 'avaliacao')) {
         // Escala de dor já está no HTML
@@ -4632,6 +4219,25 @@ function initProfessionSpecificFunctions(profession, docType) {
             alturaInput.addEventListener('input', calcularIMC);
         }
     }
+}
+
+// Atualizar dados do contrato em tempo real
+function updateContratoDados() {
+    const nome = document.getElementById('contratante-nome')?.value || '_____________________________________';
+    const cpf = document.getElementById('contratante-cpf')?.value || '_____________________________________';
+    const endereco = document.getElementById('contratante-endereco')?.value || '_____________________________________';
+    
+    const textoNome = document.getElementById('texto-contratante-nome');
+    const textoCPF = document.getElementById('texto-contratante-cpf');
+    const textoEndereco = document.getElementById('texto-contratante-endereco');
+    const assinaturaNome = document.getElementById('assinatura-contratante-nome');
+    const assinaturaCPF = document.getElementById('assinatura-contratante-cpf');
+    
+    if (textoNome) textoNome.textContent = nome;
+    if (textoCPF) textoCPF.textContent = cpf;
+    if (textoEndereco) textoEndereco.textContent = endereco;
+    if (assinaturaNome) assinaturaNome.textContent = nome;
+    if (assinaturaCPF) assinaturaCPF.textContent = cpf;
 }
 
 // FUNÇÕES DE INTERAÇÃO
@@ -4701,9 +4307,26 @@ function toggleAtestadoDias() {
 
 // ASSINATURAS
 function initAllCanvases() {
+    // Canvas padrão para documentos normais
     const canvas = document.getElementById('signatureCanvas');
-    if (!canvas || assinaturas['signatureCanvas']) return;
+    if (canvas && !assinaturas['signatureCanvas']) {
+        initCanvas(canvas, 'signatureCanvas');
+    }
     
+    // Canvas para contratante (contrato)
+    const canvasContratante = document.getElementById('signatureCanvasContratante');
+    if (canvasContratante && !assinaturas['signatureCanvasContratante']) {
+        initCanvas(canvasContratante, 'signatureCanvasContratante');
+    }
+    
+    // Canvas para profissional (contrato)
+    const canvasProfissional = document.getElementById('signatureCanvasProfissional');
+    if (canvasProfissional && !assinaturas['signatureCanvasProfissional']) {
+        initCanvas(canvasProfissional, 'signatureCanvasProfissional');
+    }
+}
+
+function initCanvas(canvas, id) {
     const container = canvas.parentElement;
     canvas.width = container.offsetWidth - 4;
     canvas.height = 150;
@@ -4723,7 +4346,8 @@ function initAllCanvases() {
         const y = (e.clientY || e.touches[0].clientY) - rect.top;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        canvas.parentElement.querySelector('.signature-label').style.display = 'none';
+        const label = canvas.parentElement.querySelector('.signature-label');
+        if (label) label.style.display = 'none';
         e.preventDefault();
     }
     
@@ -4749,16 +4373,20 @@ function initAllCanvases() {
     canvas.addEventListener('touchmove', draw, {passive: false});
     canvas.addEventListener('touchend', stopDrawing);
     
-    assinaturas['signatureCanvas'] = { canvas, ctx, hasSignature: false };
+    assinaturas[id] = { canvas, ctx, hasSignature: false };
 }
 
 function clearSignature() {
-    const canvas = document.getElementById('signatureCanvas');
-    if (canvas && assinaturas['signatureCanvas']) {
-        const ctx = assinaturas['signatureCanvas'].ctx;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        assinaturas['signatureCanvas'].hasSignature = false;
-        canvas.parentElement.querySelector('.signature-label').style.display = 'block';
+    clearSignatureById('signatureCanvas');
+}
+
+function clearSignatureById(canvasId) {
+    const sig = assinaturas[canvasId];
+    if (sig) {
+        sig.ctx.clearRect(0, 0, sig.canvas.width, sig.canvas.height);
+        sig.hasSignature = false;
+        const label = sig.canvas.parentElement.querySelector('.signature-label');
+        if (label) label.style.display = 'block';
     }
 }
 
@@ -4790,9 +4418,24 @@ function saveAndGeneratePDF() {
         createdAt: new Date().toISOString()
     };
     
-    const canvas = document.getElementById('signatureCanvas');
-    if (canvas) {
-        docData.signature = canvas.toDataURL('image/png');
+    // Coletar assinaturas
+    if (currentDocType.id === 'contrato') {
+        // Contrato tem duas assinaturas
+        const canvasContratante = document.getElementById('signatureCanvasContratante');
+        const canvasProfissional = document.getElementById('signatureCanvasProfissional');
+        
+        if (canvasContratante) {
+            docData.signatureContratante = canvasContratante.toDataURL('image/png');
+        }
+        if (canvasProfissional) {
+            docData.signatureProfissional = canvasProfissional.toDataURL('image/png');
+        }
+    } else {
+        // Documentos normais têm uma assinatura
+        const canvas = document.getElementById('signatureCanvas');
+        if (canvas) {
+            docData.signature = canvas.toDataURL('image/png');
+        }
     }
     
     showLoading(true);
@@ -4890,17 +4533,56 @@ function generatePDF(docData) {
         }
     });
     
-    // Assinatura
-    if (docData.signature && y < 220) {
+    // Assinaturas
+    if (docData.type === 'contrato') {
+        // Contrato com assinaturas duplas
+        if (y > 200) {
+            doc.addPage();
+            y = 20;
+        }
+        
         y += 10;
         doc.setFont('helvetica', 'bold');
-        doc.text('ASSINATURA DO PROFISSIONAL:', 20, y);
-        y += 5;
-        doc.addImage(docData.signature, 'PNG', 20, y, 60, 30);
-        y += 35;
-        doc.line(20, y, 80, y);
-        doc.setFontSize(9);
-        doc.text(currentUser.name + ' - ' + currentUser.registro, 20, y + 5);
+        doc.text('ASSINATURAS:', 20, y);
+        y += 15;
+        
+        // Assinatura do contratante
+        if (docData.signatureContratante && y < 220) {
+            doc.setFont('helvetica', 'bold');
+            doc.text('CONTRATANTE:', 20, y);
+            y += 5;
+            doc.addImage(docData.signatureContratante, 'PNG', 20, y, 60, 30);
+            y += 35;
+            doc.line(20, y, 80, y);
+            doc.setFontSize(9);
+            doc.text(docData.formData['contratante-nome'] || 'Contratante', 20, y + 5);
+            y += 15;
+        }
+        
+        // Assinatura do profissional
+        if (docData.signatureProfissional && y < 220) {
+            doc.setFont('helvetica', 'bold');
+            doc.text('CONTRATADO:', 20, y);
+            y += 5;
+            doc.addImage(docData.signatureProfissional, 'PNG', 20, y, 60, 30);
+            y += 35;
+            doc.line(20, y, 80, y);
+            doc.setFontSize(9);
+            doc.text(currentUser.name + ' - ' + currentUser.registro, 20, y + 5);
+        }
+    } else {
+        // Assinatura única padrão
+        if (docData.signature && y < 220) {
+            y += 10;
+            doc.setFont('helvetica', 'bold');
+            doc.text('ASSINATURA DO PROFISSIONAL:', 20, y);
+            y += 5;
+            doc.addImage(docData.signature, 'PNG', 20, y, 60, 30);
+            y += 35;
+            doc.line(20, y, 80, y);
+            doc.setFontSize(9);
+            doc.text(currentUser.name + ' - ' + currentUser.registro, 20, y + 5);
+        }
     }
     
     // Rodapé
