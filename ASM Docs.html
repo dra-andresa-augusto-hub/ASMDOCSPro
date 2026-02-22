@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ASM DOCS Universal - Gestão de Documentos Clínicos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #1e3a5f;
+            --secondary: #c9a227;
+            --light: #f5f5f5;
+            --white: #ffffff;
+            --danger: #dc3545;
+            --success: #28a745;
+            --info: #17a2b8;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--light);
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #2c4a6e 100%);
+            color: var(--white);
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+            letter-spacing: 1px;
+        }
+        
+        .header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+        
+        .user-info {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            opacity: 0.95;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 8px;
+        }
+        
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        /* LOGIN SCREEN */
+        .login-screen {
+            background: linear-gradient(135deg, var(--primary) 0%, #2c4a6e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-box {
+            background: var(--white);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo h2 {
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+        
+        .login-logo p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--secondary) 0%, #b8941f 100%);
+            color: var(--primary);
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-secondary {
+            background: var(--primary);
+            color: var(--white);
+            margin-top: 10px;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-info {
+            background: var(--info);
+            color: white;
+        }
+        
+        .btn-whatsapp {
+            background: #25d366;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            width: auto;
+        }
+        
+        /* MAIN SCREEN */
+        .main-screen {
+            display: none;
+            min-height: 100vh;
+            background: var(--light);
+        }
+        
+        /* NAVIGATION */
+        .nav-tabs {
+            display: flex;
+            background: var(--white);
+            overflow-x: auto;
+            padding: 10px;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 70px;
+            z-index: 999;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 8px;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .nav-tab.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+        
+        /* CONTENT AREA */
+        .content-area {
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .section-title {
+            color: var(--primary);
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* CARDS */
+        .card {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            color: var(--primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        /* PATIENT LIST */
+        .patient-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .patient-item {
+            background: var(--white);
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid var(--secondary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .patient-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .patient-info h3 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 3px;
+        }
+        
+        .patient-info p {
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        .patient-arrow {
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+        
+        /* PRONTUÁRIO */
+        .prontuario-screen {
+            display: none;
+            min-height: 100vh;
+            background: var(--light);
+        }
+        
+        .prontuario-header {
+            background: var(--white);
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .prontuario-header h2 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+        
+        .prontuario-dados {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .prontuario-dados span {
+            display: block;
+        }
+        
+        .prontuario-dados strong {
+            color: var(--primary);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+            min-width: 140px;
+        }
+        
+        /* DOCUMENTOS DO PRONTUÁRIO */
+        .doc-history {
+            margin-top: 20px;
+        }
+        
+        .doc-history-item {
+            background: var(--white);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--info);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .doc-history-info h4 {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .doc-history-info p {
+            color: #666;
+            font-size: 0.85rem;
+        }
+        
+        .doc-history-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-icon {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        
+        .btn-view {
+            background: var(--info);
+            color: white;
+        }
+        
+        .btn-pdf {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 15px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        /* DOCUMENT LIST */
+        .doc-list {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .doc-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 4px solid var(--secondary);
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .doc-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .doc-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .doc-icon {
+            font-size: 1.5rem;
+        }
+        
+        /* FORM STYLES */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        /* CANVAS */
+        .signature-section {
+            margin: 20px 0;
+        }
+        
+        .signature-box {
+            border: 2px dashed var(--primary);
+            border-radius: 10px;
+            background: #fafafa;
+            touch-action: none;
+        }
+        
+        .signature-canvas {
+            width: 100%;
+            height: 200px;
+            cursor: crosshair;
+        }
+        
+        /* ALERTS */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* LOADING */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 3000;
+            text-align: center;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--secondary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* PROFESSION BADGE */
+        .profession-badge {
+            display: inline-block;
+            background: var(--secondary);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .prontuario-dados {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .nav-tab {
+                min-width: 80px;
+                font-size: 0.75rem;
+                padding: 10px 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- TELA DE LOGIN -->
+        <div id="loginScreen" class="login-screen">
+            <div class="login-box">
+                <div class="login-logo">
+                    <h2>ASM DOCS</h2>
+                    <p>Gestão de Documentos Clínicos Universal</p>
+                </div>
+                
+                <div id="alertContainer"></div>
+                
+                <div id="step1">
+                    <div class="form-group">
+                        <label>CPF do Profissional</label>
+                        <input type="text" id="cpfInput" placeholder="000.000.000-00" maxlength="14">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Código de Ativação</label>
+                        <input type="text" id="codeInput" placeholder="ASM######" maxlength="9">
+                    </div>
+                    
+                    <button class="btn" onclick="validateCode()">Continuar</button>
+                </div>
+                
+                <div id="step2" style="display:none;">
+                    <div class="form-group">
+                        <label>Selecione sua Profissão</label>
+                        <select id="professionSelect">
+                            <option value="">Escolha...</option>
+                            <option value="fisioterapia">Fisioterapia</option>
+                            <option value="nutricao">Nutrição</option>
+                            <option value="psicologia">Psicologia</option>
+                            <option value="medicina">Medicina</option>
+                            <option value="fonoaudiologia">Fonoaudiologia</option>
+                            <option value="terapiaocupacional">Terapia Ocupacional</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="nameInput" placeholder="Dr(a). Nome Completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Registro Profissional</label>
+                        <input type="text" id="registroInput" placeholder="CREFITO/CRN/CRM/CRP...">
+                    </div>
+                    
+                    <button class="btn" onclick="completeRegistration()">Acessar Sistema</button>
+                    <button class="btn btn-secondary" onclick="backToStep1()">Voltar</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TELA PRINCIPAL -->
+        <div id="mainScreen" class="main-screen">
+            <div class="header">
+                <h1>ASM DOCS</h1>
+                <div class="subtitle">Gestão de Documentos Clínicos</div>
+                <div class="user-info" id="userDisplay"></div>
+            </div>
+            
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showSection('patients')">Pacientes</button>
+                <button class="nav-tab" onclick="showSection('documents')">Novo Doc</button>
+                <button class="nav-tab" onclick="showSection('history')">Histórico</button>
+                <button class="nav-tab" onclick="showSection('settings')">Config</button>
+            </div>
+            
+            <div class="content-area">
+                <!-- SEÇÃO PACIENTES -->
+                <div id="patientsSection" class="section active">
+                    <div class="section-title">
+                        <span>Meus Pacientes</span>
+                        <button class="btn btn-sm btn-success" onclick="openNewPatientModal()">+ Novo Paciente</button>
+                    </div>
+                    <div id="patientsList" class="patient-list"></div>
+                </div>
+                
+                <!-- SEÇÃO DOCUMENTOS -->
+                <div id="documentsSection" class="section">
+                    <h2 class="section-title">Criar Novo Documento</h2>
+                    <div class="card">
+                        <div class="form-group">
+                            <label>Selecione o Paciente</label>
+                            <select id="docPatientSelect" onchange="updatePatientForDoc()">
+                                <option value="">Escolha um paciente...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="documentsList" class="doc-list"></div>
+                </div>
+                
+                <!-- SEÇÃO HISTÓRICO -->
+                <div id="historySection" class="section">
+                    <h2 class="section-title">Todos os Documentos</h2>
+                    <div id="allDocumentsList"></div>
+                </div>
+                
+                <!-- SEÇÃO CONFIGURAÇÕES -->
+                <div id="settingsSection" class="section">
+                    <h2 class="section-title">Configurações</h2>
+                    <div class="card">
+                        <h3>Informações do Profissional</h3>
+                        <div id="professionalInfo"></div>
+                        <button class="btn btn-danger" onclick="logout()" style="margin-top:20px;">Sair do Sistema</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TELA DE PRONTUÁRIO -->
+        <div id="prontuarioScreen" class="prontuario-screen">
+            <div class="header">
+                <button class="back-btn" onclick="closeProntuario()">← Voltar</button>
+                <h1>Prontuário</h1>
+                <div class="subtitle">Ficha do Paciente</div>
+            </div>
+            
+            <div class="content-area">
+                <div class="prontuario-header">
+                    <h2 id="prontuarioPatientName">Nome do Paciente</h2>
+                    <div class="prontuario-dados" id="prontuarioPatientData"></div>
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="openNewDocumentForPatient()">📝 Novo Documento</button>
+                        <button class="btn btn-info" onclick="exportProntuarioPDF()">📄 Exportar Prontuário</button>
+                        <button class="btn btn-whatsapp" onclick="contactPatient()">📱 Contato</button>
+                    </div>
+                </div>
+                
+                <div class="doc-history">
+                    <h3 style="color:var(--primary);margin-bottom:15px;">Histórico de Documentos</h3>
+                    <div id="patientDocumentsList"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL DE NOVO PACIENTE -->
+        <div id="newPatientModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Cadastrar Novo Paciente</h3>
+                    <button class="close-btn" onclick="closeNewPatientModal()">&times;</button>
+                </div>
+                <div class="form-group">
+                    <label>Nome Completo *</label>
+                    <input type="text" id="newPatientName" placeholder="Nome do paciente">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data de Nascimento</label>
+                        <input type="date" id="newPatientBirth">
+                    </div>
+                    <div class="form-group">
+                        <label>CPF</label>
+                        <input type="text" id="newPatientCPF" placeholder="000.000.000-00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="text" id="newPatientPhone" placeholder="(00) 00000-0000">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="newPatientEmail" placeholder="email@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="newPatientAddress" placeholder="Rua, número, bairro">
+                </div>
+                <div class="form-group">
+                    <label>Convênio/Plano de Saúde</label>
+                    <input type="text" id="newPatientConvenio" placeholder="Nome do convênio (opcional)">
+                </div>
+                <button class="btn" onclick="saveNewPatient()">Salvar Paciente</button>
+            </div>
+        </div>
+        
+        <!-- MODAL DE DOCUMENTO -->
+        <div id="documentModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Novo Documento</h3>
+                    <button class="close-btn" onclick="closeDocumentModal()">&times;</button>
+                </div>
+                <div id="modalBody"></div>
+            </div>
+        </div>
+        
+        <!-- MODAL DE VISUALIZAÇÃO -->
+        <div id="viewModal" class="modal">
+            <div class="modal-content" style="max-width:800px;">
+                <div class="modal-header">
+                    <h3 id="viewModalTitle">Visualizar Documento</h3>
+                    <button class="close-btn" onclick="closeViewModal()">&times;</button>
+                </div>
+                <div id="viewModalBody" style="max-height:60vh;overflow-y:auto;"></div>
+                <div class="btn-group" style="margin-top:20px;">
+                    <button class="btn btn-danger" onclick="generatePDFFromView()">📄 Baixar PDF</button>
+                    <button class="btn btn-whatsapp" onclick="sendWhatsAppFromView()">📱 WhatsApp</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- LOADING -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Processando...</p>
+        </div>
+    </div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG - SUAS CREDENCIAIS (MODO COMPAT - IGUAL REVARA)
+// ============================================================
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCahe3sNMGAzG-QM-q-IOkCyGF_HDl8oOE",
+    authDomain: "asm-docs-universal.firebaseapp.com",
+    databaseURL: "https://asm-docs-universal-default-rtdb.firebaseio.com",
+    projectId: "asm-docs-universal",
+    storageBucket: "asm-docs-universal.firebasestorage.app",
+    messagingSenderId: "39021662623",
+    appId: "1:39021662623:web:ec6399c46255cd5a13adaa"
+};
+
+// Inicializar Firebase (MODO COMPAT)
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
+// VARIÁVEIS GLOBAIS
+let currentUser = null;
+let currentProfession = null;
+let currentPatientId = null;
+let currentPatientData = null;
+let currentViewDoc = null;
+let currentDocType = null;
+
+// PROFISSÕES
+const professions = {
+    fisioterapia: {
+        name: "Fisioterapia",
+        registro: "CREFITO",
+        documents: [
+            { id: 'avaliacao', name: 'Avaliação Fisioterapêutica', icon: '📋' },
+            { id: 'evolucao', name: 'Evolução', icon: '📈' },
+            { id: 'alta', name: 'Alta Fisioterapêutica', icon: '✅' },
+            { id: 'atestado', name: 'Atestado', icon: '📄' },
+            { id: 'tcle', name: 'TCLE', icon: '📝' },
+            { id: 'comparecimento', name: 'Declaração de Comparecimento', icon: '🕐' }
+        ]
+    },
+    nutricao: {
+        name: "Nutrição",
+        registro: "CRN",
+        documents: [
+            { id: 'anamnese', name: 'Anamnese Alimentar', icon: '🥗' },
+            { id: 'plano', name: 'Plano Alimentar', icon: '📋' },
+            { id: 'evolucao', name: 'Evolução Nutricional', icon: '📊' },
+            { id: 'alta', name: 'Alta Nutricional', icon: '✅' },
+            { id: 'atestado', name: 'Atestado', icon: '📄' }
+        ]
+    },
+    psicologia: {
+        name: "Psicologia",
+        registro: "CRP",
+        documents: [
+            { id: 'anamnese', name: 'Anamnese Psicossocial', icon: '🧠' },
+            { id: 'relatorio', name: 'Relatório Psicológico', icon: '📋' },
+            { id: 'evolucao', name: 'Evolução', icon: '📈' },
+            { id: 'alta', name: 'Alta Psicológica', icon: '✅' },
+            { id: 'atestado', name: 'Atestado', icon: '📄' }
+        ]
+    },
+    medicina: {
+        name: "Medicina",
+        registro: "CRM",
+        documents: [
+            { id: 'anamnese', name: 'Anamnese Clínica', icon: '🩺' },
+            { id: 'relatorio', name: 'Relatório Médico', icon: '📋' },
+            { id: 'atestado', name: 'Atestado Médico', icon: '📄' },
+            { id: 'receituario', name: 'Receituário', icon: '💊' },
+            { id: 'evolucao', name: 'Evolução Médica', icon: '📈' }
+        ]
+    },
+    fonoaudiologia: {
+        name: "Fonoaudiologia",
+        registro: "CREFONO",
+        documents: [
+            { id: 'avaliacao', name: 'Avaliação Fonoaudiológica', icon: '👂' },
+            { id: 'evolucao', name: 'Evolução', icon: '📈' },
+            { id: 'alta', name: 'Alta', icon: '✅' },
+            { id: 'relatorio', name: 'Relatório', icon: '📋' },
+            { id: 'atestado', name: 'Atestado', icon: '📄' }
+        ]
+    },
+    terapiaocupacional: {
+        name: "Terapia Ocupacional",
+        registro: "CREFITO",
+        documents: [
+            { id: 'avaliacao', name: 'Avaliação TO', icon: '🏃' },
+            { id: 'evolucao', name: 'Evolução', icon: '📈' },
+            { id: 'alta', name: 'Alta', icon: '✅' },
+            { id: 'relatorio', name: 'Relatório', icon: '📋' },
+            { id: 'atestado', name: 'Atestado', icon: '📄' }
+        ]
+    }
+};
+
+// MÁSCARAS
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('cpfInput')?.addEventListener('input', maskCPF);
+    document.getElementById('newPatientCPF')?.addEventListener('input', maskCPF);
+    document.getElementById('newPatientPhone')?.addEventListener('input', maskPhone);
+});
+
+function maskCPF(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d)/, '$1.$2');
+        value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = value;
+    }
+}
+
+function maskPhone(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+        if (value.length > 10) {
+            value = value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+        } else if (value.length > 6) {
+            value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3');
+        } else if (value.length > 2) {
+            value = value.replace(/^(\d{2})(\d{0,5})$/, '($1) $2');
+        }
+        e.target.value = value;
+    }
+}
+
+// LOGIN
+function validateCode() {
+    const cpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
+    const code = document.getElementById('codeInput').value.toUpperCase();
+    
+    if (cpf.length !== 11) {
+        alert('CPF inválido!');
+        return;
+    }
+    
+    if (!code.match(/^ASM\d{6}$/)) {
+        alert('Código deve começar com ASM seguido de 6 números!');
+        return;
+    }
+    
+    showLoading(true);
+    
+    database.ref('activationCodes/' + code).once('value')
+        .then(snapshot => {
+            showLoading(false);
+            if (snapshot.exists()) {
+                const codeData = snapshot.val();
+                
+                if (codeData.used && codeData.cpf && codeData.cpf !== cpf) {
+                    alert('Código já utilizado em outro CPF!');
+                    return;
+                }
+                
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                
+                if (codeData.profession) {
+                    document.getElementById('professionSelect').value = codeData.profession;
+                    document.getElementById('nameInput').value = codeData.name || '';
+                    document.getElementById('registroInput').value = codeData.registro || '';
+                }
+            } else {
+                alert('Código não encontrado no sistema!');
+            }
+        })
+        .catch(error => {
+            showLoading(false);
+            alert('Erro ao verificar código: ' + error.message);
+        });
+}
+
+function backToStep1() {
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step1').style.display = 'block';
+}
+
+function completeRegistration() {
+    const profession = document.getElementById('professionSelect').value;
+    const name = document.getElementById('nameInput').value.trim();
+    const registro = document.getElementById('registroInput').value.trim();
+    const cpf = document.getElementById('cpfInput').value.replace(/\D/g, '');
+    const code = document.getElementById('codeInput').value.toUpperCase();
+    
+    if (!profession || !name || !registro) {
+        alert('Preencha todos os campos!');
+        return;
+    }
+    
+    showLoading(true);
+    
+    const userData = {
+        cpf: cpf,
+        code: code,
+        profession: profession,
+        name: name,
+        registro: registro,
+        createdAt: new Date().toISOString()
+    };
+    
+    const updates = {};
+    updates['activationCodes/' + code + '/used'] = true;
+    updates['activationCodes/' + code + '/cpf'] = cpf;
+    updates['activationCodes/' + code + '/profession'] = profession;
+    updates['activationCodes/' + code + '/name'] = name;
+    updates['activationCodes/' + code + '/registro'] = registro;
+    updates['activationCodes/' + code + '/activatedAt'] = new Date().toISOString();
+    updates['users/' + cpf] = userData;
+    
+    database.ref().update(updates)
+        .then(() => {
+            showLoading(false);
+            currentUser = userData;
+            currentProfession = professions[profession];
+            localStorage.setItem('asmDocsUser', JSON.stringify(userData));
+            startApp();
+        })
+        .catch(error => {
+            showLoading(false);
+            alert('Erro ao salvar: ' + error.message);
+        });
+}
+
+function startApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    
+    const profBadge = `<span class="profession-badge">${currentProfession.name}</span>`;
+    document.getElementById('userDisplay').innerHTML = `
+        ${profBadge}<br>
+        <strong>${currentUser.name}</strong><br>
+        ${currentUser.registro}
+    `;
+    
+    document.getElementById('professionalInfo').innerHTML = `
+        <p><strong>Nome:</strong> ${currentUser.name}</p>
+        <p><strong>Profissão:</strong> ${currentProfession.name}</p>
+        <p><strong>Registro:</strong> ${currentUser.registro}</p>
+        <p><strong>CPF:</strong> ${currentUser.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</p>
+        <p><strong>Código:</strong> ${currentUser.code}</p>
+    `;
+    
+    loadPatients();
+    loadAllDocuments();
+}
+
+function logout() {
+    if (confirm('Deseja realmente sair?')) {
+        localStorage.removeItem('asmDocsUser');
+        location.reload();
+    }
+}
+
+// PACIENTES
+function loadPatients() {
+    const container = document.getElementById('patientsList');
+    const select = document.getElementById('docPatientSelect');
+    
+    container.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Carregando...</p>';
+    if (select) select.innerHTML = '<option value="">Escolha um paciente...</option>';
+    
+    database.ref('patients/' + currentUser.cpf).orderByChild('name').once('value')
+        .then(snapshot => {
+            container.innerHTML = '';
+            
+            if (!snapshot.exists()) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>Nenhum paciente cadastrado</p>
+                        <p style="font-size:0.9rem;margin-top:10px;">Clique em "Novo Paciente" para começar</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            snapshot.forEach(child => {
+                const patient = child.val();
+                const patientId = child.key;
+                
+                if (select) {
+                    const option = document.createElement('option');
+                    option.value = patientId;
+                    option.textContent = patient.name;
+                    select.appendChild(option);
+                }
+                
+                const div = document.createElement('div');
+                div.className = 'patient-item';
+                div.onclick = () => openProntuario(patientId, patient);
+                
+                const age = patient.birth ? calculateAge(patient.birth) : '';
+                
+                div.innerHTML = `
+                    <div class="patient-info">
+                        <h3>${patient.name}</h3>
+                        <p>${age ? age + ' anos' : ''} ${patient.phone ? '• ' + patient.phone : ''}</p>
+                    </div>
+                    <div class="patient-arrow">›</div>
+                `;
+                
+                container.appendChild(div);
+            });
+        });
+}
+
+function calculateAge(birthDate) {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
+    return age;
+}
+
+// PRONTUÁRIO
+function openProntuario(patientId, patientData) {
+    currentPatientId = patientId;
+    currentPatientData = patientData;
+    
+    document.getElementById('mainScreen').style.display = 'none';
+    document.getElementById('prontuarioScreen').style.display = 'block';
+    
+    document.getElementById('prontuarioPatientName').textContent = patientData.name;
+    
+    const age = patientData.birth ? calculateAge(patientData.birth) : '-';
+    const cpfFormatted = patientData.cpf ? patientData.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-';
+    
+    document.getElementById('prontuarioPatientData').innerHTML = `
+        <span><strong>Idade:</strong> ${age} anos</span>
+        <span><strong>CPF:</strong> ${cpfFormatted}</span>
+        <span><strong>Telefone:</strong> ${patientData.phone || '-'}</span>
+        <span><strong>Email:</strong> ${patientData.email || '-'}</span>
+        <span><strong>Endereço:</strong> ${patientData.address || '-'}</span>
+        <span><strong>Convênio:</strong> ${patientData.convenio || '-'}</span>
+    `;
+    
+    loadPatientDocuments(patientId);
+}
+
+function closeProntuario() {
+    document.getElementById('prontuarioScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    currentPatientId = null;
+    currentPatientData = null;
+}
+
+function loadPatientDocuments(patientId) {
+    const container = document.getElementById('patientDocumentsList');
+    container.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Carregando...</p>';
+    
+    database.ref('documents/' + currentUser.cpf).orderByChild('patientId').equalTo(patientId).once('value')
+        .then(snapshot => {
+            container.innerHTML = '';
+            
+            if (!snapshot.exists()) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>Nenhum documento encontrado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const docs = [];
+            snapshot.forEach(child => {
+                const doc = child.val();
+                doc.id = child.key;
+                docs.push(doc);
+            });
+            
+            docs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            docs.forEach(doc => {
+                const div = document.createElement('div');
+                div.className = 'doc-history-item';
+                
+                const docDate = new Date(doc.date).toLocaleDateString('pt-BR');
+                
+                div.innerHTML = `
+                    <div class="doc-history-info">
+                        <h4>${doc.docName || doc.type}</h4>
+                        <p>${docDate} • ${doc.professional}</p>
+                    </div>
+                    <div class="doc-history-actions">
+                        <button class="btn-icon btn-view" onclick="viewDocument('${doc.id}')" title="Visualizar">👁</button>
+                        <button class="btn-icon btn-pdf" onclick="generatePDFSingle('${doc.id}')" title="PDF">📄</button>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        });
+}
+
+// NOVO PACIENTE
+function openNewPatientModal() {
+    document.getElementById('newPatientModal').style.display = 'flex';
+}
+
+function closeNewPatientModal() {
+    document.getElementById('newPatientModal').style.display = 'none';
+    document.getElementById('newPatientName').value = '';
+    document.getElementById('newPatientBirth').value = '';
+    document.getElementById('newPatientCPF').value = '';
+    document.getElementById('newPatientPhone').value = '';
+    document.getElementById('newPatientEmail').value = '';
+    document.getElementById('newPatientAddress').value = '';
+    document.getElementById('newPatientConvenio').value = '';
+}
+
+function saveNewPatient() {
+    const name = document.getElementById('newPatientName').value.trim();
+    const birth = document.getElementById('newPatientBirth').value;
+    const cpf = document.getElementById('newPatientCPF').value.replace(/\D/g, '');
+    const phone = document.getElementById('newPatientPhone').value;
+    const email = document.getElementById('newPatientEmail').value.trim();
+    const address = document.getElementById('newPatientAddress').value.trim();
+    const convenio = document.getElementById('newPatientConvenio').value.trim();
+    
+    if (!name) {
+        alert('Digite o nome do paciente!');
+        return;
+    }
+    
+    showLoading(true);
+    
+    const patientData = {
+        name: name,
+        birth: birth,
+        cpf: cpf,
+        phone: phone,
+        email: email,
+        address: address,
+        convenio: convenio,
+        createdAt: new Date().toISOString(),
+        professionalCpf: currentUser.cpf
+    };
+    
+    const patientRef = database.ref('patients/' + currentUser.cpf).push();
+    patientRef.set(patientData)
+        .then(() => {
+            showLoading(false);
+            alert('Paciente salvo com sucesso!');
+            closeNewPatientModal();
+            loadPatients();
+        })
+        .catch(error => {
+            showLoading(false);
+            alert('Erro ao salvar: ' + error.message);
+        });
+}
+
+// DOCUMENTOS
+function showSection(sectionName) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    
+    document.getElementById(sectionName + 'Section').classList.add('active');
+    
+    const tabs = document.querySelectorAll('.nav-tab');
+    const sectionIndex = ['patients', 'documents', 'history', 'settings'].indexOf(sectionName);
+    if (tabs[sectionIndex]) tabs[sectionIndex].classList.add('active');
+    
+    if (sectionName === 'documents') {
+        loadDocumentsList();
+    } else if (sectionName === 'history') {
+        loadAllDocuments();
+    }
+}
+
+function updatePatientForDoc() {
+    const patientId = document.getElementById('docPatientSelect').value;
+    if (patientId) {
+        loadDocumentsList();
+    } else {
+        document.getElementById('documentsList').innerHTML = '';
+    }
+}
+
+function loadDocumentsList() {
+    const container = document.getElementById('documentsList');
+    container.innerHTML = '';
+    
+    currentProfession.documents.forEach(doc => {
+        const div = document.createElement('div');
+        div.className = 'doc-item';
+        div.innerHTML = `
+            <div>
+                <div class="doc-name">${doc.name}</div>
+                <small style="color: #666;">Clique para preencher</small>
+            </div>
+            <div class="doc-icon">${doc.icon}</div>
+        `;
+        div.onclick = () => openDocumentForm(doc);
+        container.appendChild(div);
+    });
+}
+
+function openNewDocumentForPatient() {
+    closeProntuario();
+    showSection('documents');
+    document.getElementById('docPatientSelect').value = currentPatientId;
+    updatePatientForDoc();
+}
+
+function openDocumentForm(doc) {
+    const patientId = document.getElementById('docPatientSelect').value;
+    if (!patientId && !currentPatientId) {
+        alert('Selecione um paciente primeiro!');
+        return;
+    }
+    
+    currentDocType = doc;
+    
+    const modal = document.getElementById('documentModal');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    
+    title.textContent = doc.name;
+    body.innerHTML = generateFormHTML(doc.id, currentUser.profession);
+    
+    modal.style.display = 'flex';
+    setTimeout(initSignaturePad, 100);
+}
+
+function closeDocumentModal() {
+    document.getElementById('documentModal').style.display = 'none';
+}
+
+// FORMULÁRIOS ESPECÍFICOS (simplificado - expandir conforme necessidade)
+function generateFormHTML(docType, profession) {
+    const today = new Date().toISOString().split('T')[0];
+    
+    let html = `
+        <div class="form-row">
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="docDate" value="${today}">
+            </div>
+            <div class="form-group">
+                <label>Local</label>
+                <input type="text" id="docLocation" placeholder="Clínica/Cidade">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Conteúdo do Documento</label>
+            <textarea id="docContent" placeholder="Digite o conteúdo do documento aqui..." style="min-height:200px;"></textarea>
+        </div>
+        <div class="signature-section">
+            <label>Assinatura do Profissional</label>
+            <div class="signature-box">
+                <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="clearSignature()" style="margin-top:10px;padding:8px;width:auto;">Limpar Assinatura</button>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="saveAndGeneratePDF()">📄 Salvar e Gerar PDF</button>
+            <button class="btn" onclick="closeDocumentModal()">Cancelar</button>
+        </div>
+    `;
+    
+    return html;
+}
+
+// ASSINATURA
+function initSignaturePad() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (!canvas) return;
+    
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+    
+    function startDrawing(e) {
+        isDrawing = true;
+        const pos = getPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        e.preventDefault();
+    }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        lastX = pos.x;
+        lastY = pos.y;
+        e.preventDefault();
+    }
+    
+    function stopDrawing() {
+        isDrawing = false;
+    }
+    
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+}
+
+function clearSignature() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+// SALVAR E GERAR PDF
+function saveAndGeneratePDF() {
+    const patientSelect = document.getElementById('docPatientSelect');
+    const patientId = patientSelect.value || currentPatientId;
+    const patientName = currentPatientData ? currentPatientData.name : 'Paciente';
+    
+    const docData = {
+        type: currentDocType.id,
+        docName: currentDocType.name,
+        profession: currentUser.profession,
+        patientId: patientId,
+        patientName: patientName,
+        date: document.getElementById('docDate').value,
+        location: document.getElementById('docLocation').value,
+        content: document.getElementById('docContent').value,
+        professional: currentUser.name,
+        registro: currentUser.registro,
+        createdAt: new Date().toISOString()
+    };
+    
+    const canvas = document.getElementById('signatureCanvas');
+    if (canvas) {
+        docData.signature = canvas.toDataURL('image/png');
+    }
+    
+    showLoading(true);
+    
+    const docRef = database.ref('documents/' + currentUser.cpf).push();
+    docRef.set(docData)
+        .then(() => {
+            showLoading(false);
+            generatePDF(docData);
+            closeDocumentModal();
+            if (currentPatientId) loadPatientDocuments(currentPatientId);
+            loadAllDocuments();
+        })
+        .catch(error => {
+            showLoading(false);
+            alert('Erro ao salvar: ' + error.message);
+        });
+}
+
+// GERAR PDF
+function generatePDF(docData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.setTextColor(30, 58, 95);
+    doc.text('ASM DOCS UNIVERSAL', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setTextColor(201, 162, 39);
+    doc.text('Gestão de Documentos Clínicos', 105, 28, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`${currentProfession.name} - ${currentUser.registro}`, 105, 35, { align: 'center' });
+    doc.text(currentUser.name, 105, 40, { align: 'center' });
+    
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.5);
+    doc.line(20, 45, 190, 45);
+    
+    doc.setFontSize(16);
+    doc.setTextColor(30, 58, 95);
+    doc.text(docData.docName.toUpperCase(), 105, 55, { align: 'center' });
+    
+    let y = 70;
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Paciente:', 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(docData.patientName, 50, y);
+    y += 8;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Data:', 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(new Date(docData.date).toLocaleDateString('pt-BR'), 50, y);
+    y += 8;
+    
+    if (docData.location) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Local:', 20, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(docData.location, 50, y);
+        y += 8;
+    }
+    
+    y += 10;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Conteúdo:', 20, y);
+    y += 8;
+    
+    doc.setFont('helvetica', 'normal');
+    const splitText = doc.splitTextToSize(docData.content, 170);
+    doc.text(splitText, 20, y);
+    y += (splitText.length * 5) + 10;
+    
+    if (docData.signature && y < 220) {
+        doc.text('Assinatura do Profissional:', 20, y);
+        y += 5;
+        doc.addImage(docData.signature, 'PNG', 20, y, 60, 30);
+        y += 35;
+        doc.line(20, y, 80, y);
+        doc.setFontSize(9);
+        doc.text(currentUser.name + ' - ' + currentUser.registro, 20, y + 5);
+    }
+    
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`ASM DOCS Universal - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+    }
+    
+    const fileName = `${docData.type}_${docData.patientName.replace(/\s+/g, '_')}_${docData.date}.pdf`;
+    doc.save(fileName);
+}
+
+// VISUALIZAR DOCUMENTO
+function viewDocument(docId) {
+    showLoading(true);
+    
+    database.ref('documents/' + currentUser.cpf + '/' + docId).once('value')
+        .then(snapshot => {
+            showLoading(false);
+            if (snapshot.exists()) {
+                const doc = snapshot.val();
+                currentViewDoc = doc;
+                
+                document.getElementById('viewModalTitle').textContent = doc.docName || doc.type;
+                document.getElementById('viewModalBody').innerHTML = `
+                    <div class="card">
+                        <p><strong>Paciente:</strong> ${doc.patientName}</p>
+                        <p><strong>Data:</strong> ${new Date(doc.date).toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Profissional:</strong> ${doc.professional} - ${doc.registro}</p>
+                        <hr style="margin:15px 0;">
+                        <p style="white-space:pre-wrap;">${doc.content || 'Sem conteúdo'}</p>
+                    </div>
+                `;
+                
+                document.getElementById('viewModal').style.display = 'flex';
+            }
+        });
+}
+
+function closeViewModal() {
+    document.getElementById('viewModal').style.display = 'none';
+    currentViewDoc = null;
+}
+
+function generatePDFSingle(docId) {
+    showLoading(true);
+    database.ref('documents/' + currentUser.cpf + '/' + docId).once('value')
+        .then(snapshot => {
+            showLoading(false);
+            if (snapshot.exists()) {
+                generatePDF(snapshot.val());
+            }
+        });
+}
+
+function generatePDFFromView() {
+    if (currentViewDoc) {
+        generatePDF(currentViewDoc);
+    }
+}
+
+// HISTÓRICO GERAL
+function loadAllDocuments() {
+    const container = document.getElementById('allDocumentsList');
+    if (!container) return;
+    
+    container.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Carregando...</p>';
+    
+    database.ref('documents/' + currentUser.cpf).orderByChild('createdAt').limitToLast(50).once('value')
+        .then(snapshot => {
+            container.innerHTML = '';
+            
+            if (!snapshot.exists()) {
+                container.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Nenhum documento gerado</p>';
+                return;
+            }
+            
+            const docs = [];
+            snapshot.forEach(child => {
+                const doc = child.val();
+                doc.id = child.key;
+                docs.push(doc);
+            });
+            
+            docs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            docs.forEach(doc => {
+                const div = document.createElement('div');
+                div.className = 'doc-history-item';
+                
+                const docDate = new Date(doc.date).toLocaleDateString('pt-BR');
+                
+                div.innerHTML = `
+                    <div class="doc-history-info">
+                        <h4>${doc.docName || doc.type}</h4>
+                        <p>${doc.patientName} • ${docDate}</p>
+                    </div>
+                    <div class="doc-history-actions">
+                        <button class="btn-icon btn-view" onclick="viewDocument('${doc.id}')" title="Visualizar">👁</button>
+                        <button class="btn-icon btn-pdf" onclick="generatePDFSingle('${doc.id}')" title="PDF">📄</button>
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        });
+}
+
+// EXPORTAR PRONTUÁRIO COMPLETO
+function exportProntuarioPDF() {
+    if (!currentPatientData) return;
+    
+    showLoading(true);
+    
+    database.ref('documents/' + currentUser.cpf).orderByChild('patientId').equalTo(currentPatientId).once('value')
+        .then(snapshot => {
+            showLoading(false);
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Cabeçalho
+            doc.setFontSize(18);
+            doc.setTextColor(30, 58, 95);
+            doc.text('PRONTUÁRIO DO PACIENTE', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(201, 162, 39);
+            doc.text('ASM DOCS Universal', 105, 28, { align: 'center' });
+            
+            // Dados do paciente
+            let y = 45;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text('DADOS DO PACIENTE', 20, y);
+            y += 10;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Nome: ${currentPatientData.name}`, 20, y);
+            y += 7;
+            
+            if (currentPatientData.birth) {
+                doc.text(`Data de Nascimento: ${new Date(currentPatientData.birth).toLocaleDateString('pt-BR')}`, 20, y);
+                y += 7;
+            }
+            
+            if (currentPatientData.cpf) {
+                const cpfFormatted = currentPatientData.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                doc.text(`CPF: ${cpfFormatted}`, 20, y);
+                y += 7;
+            }
+            
+            if (currentPatientData.phone) {
+                doc.text(`Telefone: ${currentPatientData.phone}`, 20, y);
+                y += 7;
+            }
+            
+            if (currentPatientData.email) {
+                doc.text(`Email: ${currentPatientData.email}`, 20, y);
+                y += 7;
+            }
+            
+            if (currentPatientData.address) {
+                doc.text(`Endereço: ${currentPatientData.address}`, 20, y);
+                y += 7;
+            }
+            
+            if (currentPatientData.convenio) {
+                doc.text(`Convênio: ${currentPatientData.convenio}`, 20, y);
+                y += 7;
+            }
+            
+            y += 10;
+            
+            // Documentos
+            if (snapshot.exists()) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('HISTÓRICO DE DOCUMENTOS', 20, y);
+                y += 10;
+                
+                const docs = [];
+                snapshot.forEach(child => {
+                    docs.push(child.val());
+                });
+                
+                docs.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                
+                docs.forEach((doc, index) => {
+                    if (y > 250) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.text(`${index + 1}. ${doc.docName || doc.type}`, 20, y);
+                    y += 5;
+                    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    doc.text(`Data: ${new Date(doc.date).toLocaleDateString('pt-BR')} | Profissional: ${doc.professional}`, 20, y);
+                    y += 5;
+                    
+                    if (doc.content) {
+                        const content = doc.content.substring(0, 200) + (doc.content.length > 200 ? '...' : '');
+                        const splitContent = doc.splitTextToSize(content, 170);
+                        doc.text(splitContent, 20, y);
+                        y += (splitContent.length * 4) + 5;
+                    }
+                    
+                    y += 5;
+                });
+            } else {
+                doc.text('Nenhum documento encontrado.', 20, y);
+            }
+            
+            // Rodapé
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Prontuário gerado em ${new Date().toLocaleDateString('pt-BR')} - Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+            }
+            
+            const fileName = `Prontuario_${currentPatientData.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+        });
+}
+
+// CONTATO WHATSAPP
+function contactPatient() {
+    if (!currentPatientData || !currentPatientData.phone) {
+        alert('Paciente não tem telefone cadastrado!');
+        return;
+    }
+    
+    const phone = currentPatientData.phone.replace(/\D/g, '');
+    const message = `Olá ${currentPatientData.name}! Sou ${currentUser.name}, gostaria de confirmar nosso atendimento.`;
+    window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`, '_blank');
+}
+
+function sendWhatsAppFromView() {
+    if (currentViewDoc && currentViewDoc.patientId) {
+        database.ref('patients/' + currentUser.cpf + '/' + currentViewDoc.patientId).once('value')
+            .then(snapshot => {
+                if (snapshot.exists()) {
+                    const patient = snapshot.val();
+                    if (patient.phone) {
+                        const phone = patient.phone.replace(/\D/g, '');
+                        window.open(`https://wa.me/55${phone}`, '_blank');
+                    } else {
+                        alert('Paciente não tem telefone cadastrado!');
+                    }
+                }
+            });
+    }
+}
+
+// UTILITÁRIOS
+function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'block' : 'none';
+}
+
+// INICIALIZAÇÃO
+window.onload = function() {
+    const savedUser = localStorage.getItem('asmDocsUser');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        currentProfession = professions[currentUser.profession];
+        startApp();
+    }
+};
+</script>
+</body>
+</html>
