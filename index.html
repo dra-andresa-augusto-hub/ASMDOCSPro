@@ -5366,7 +5366,10 @@ return;
 }
 
 campo.dataset.saved = "true";
-
+            database.ref('documents/' + currentUser.cpf + '/evolucoes/' + currentPatientId + '/' + i).set({
+texto: campo.value,
+data: document.getElementById("evolucao-data-"+i).value});
+            
 campo.style.border = "2px solid #28a745";
 
 showToast("Evolução " + i + " salva");
