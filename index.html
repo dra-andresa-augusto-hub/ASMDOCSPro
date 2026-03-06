@@ -5121,8 +5121,13 @@ function loadAllDocuments() {
                             <p style="color:#666;font-size:0.85rem;">${doc.patientName} • ${docDate}</p>
                         </div>
                         <div>
-                            <button class="btn btn-sm btn-info" onclick="event.stopPropagation();viewDocument('${doc.id}')" style="margin-right:5px;">👁</button>
-                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();generatePDFSingle('${doc.id}')">📄</button>
+                            <button class="btn btn-sm btn-info" onclick="event.stopPropagation();viewDocument('${doc.id}')">👁</button>
+
+<button class="btn btn-sm btn-warning" onclick="event.stopPropagation();editDocument('${doc.id}')">✏️</button>
+
+<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDocument('${doc.id}')">🗑</button>
+
+<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();generatePDFSingle('${doc.id}')">📄</button>
                         </div>
                     </div>
                 `;
@@ -5306,6 +5311,42 @@ function openNewDocumentForPatient() {
         updatePatientForDoc();
         closeProntuario();
     }
+}
+    function deleteDocument(docId){
+
+if(!confirm("Deseja realmente excluir este documento?")) return;
+
+database.ref('documents/' + currentUser.cpf + '/' + docId).remove()
+.then(()=>{
+loadAllDocuments();
+showToast("Documento excluído");
+})
+.catch(error=>{
+alert("Erro ao excluir: " + error.message);
+});
+
+}
+
+function editDocument(docId){
+
+database.ref('documents/' + currentUser.cpf + '/' + docId).once('value')
+.then(snapshot=>{
+
+if(!snapshot.exists()) return;
+
+const doc = snapshot.val();
+
+currentDocType = doc.type;
+currentPatientId = doc.patientId;
+
+openDocument(doc.type);
+
+setTimeout(()=>{
+loadDocumentDataForEdit(doc);
+},500);
+
+});
+
 }
 </script>
 </body>
