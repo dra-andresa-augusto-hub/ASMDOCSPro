@@ -2296,6 +2296,14 @@ function getSpecificFormHTML(docType, profession) {
                         <input type="date" class="form-input" id="evolucao-data-${i}" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <textarea class="form-textarea evolucao-campo-texto" id="evolucao-${i}" placeholder="" style="min-height:80px;"></textarea>
+    
+<div style="margin-top:6px;display:flex;gap:6px;">
+<button class="btn btn-sm btn-success" onclick="saveEvolutionField(${i})">💾 Salvar</button>
+<button class="btn btn-sm btn-warning" onclick="editEvolutionField(${i})">✏️ Editar</button>
+</div>
+
+</div>
+`;
                 </div>
             `;
         }
@@ -5346,6 +5354,37 @@ loadDocumentDataForEdit(doc);
 },500);
 
 });
+
+}
+        function saveEvolutionField(i){
+
+const campo = document.getElementById("evolucao-"+i);
+
+if(!campo){
+alert("Campo de evolução não encontrado");
+return;
+}
+
+campo.dataset.saved = "true";
+
+campo.style.border = "2px solid #28a745";
+
+showToast("Evolução " + i + " salva");
+
+}
+
+
+function editEvolutionField(i){
+
+const campo = document.getElementById("evolucao-"+i);
+
+if(!campo) return;
+
+campo.focus();
+
+campo.style.border = "2px solid #ffc107";
+
+showToast("Editando evolução " + i);
 
 }
 </script>
