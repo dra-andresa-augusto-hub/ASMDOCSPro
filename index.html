@@ -2296,14 +2296,8 @@ function getSpecificFormHTML(docType, profession) {
                         <input type="date" class="form-input" id="evolucao-data-${i}" value="${new Date().toISOString().split('T')[0]}">
                     </div>
                     <textarea class="form-textarea evolucao-campo-texto" id="evolucao-${i}" placeholder="" style="min-height:80px;"></textarea>
-    
-<div style="margin-top:6px;display:flex;gap:6px;">
-<button class="btn btn-sm btn-success" onclick="saveEvolutionField(${i})">💾 Salvar</button>
-<button class="btn btn-sm btn-warning" onclick="editEvolutionField(${i})">✏️ Editar</button>
-</div>
-
-</div>
-
+                </div>
+            `;
         }
     }
     
@@ -5127,13 +5121,8 @@ function loadAllDocuments() {
                             <p style="color:#666;font-size:0.85rem;">${doc.patientName} • ${docDate}</p>
                         </div>
                         <div>
-                            <button class="btn btn-sm btn-info" onclick="event.stopPropagation();viewDocument('${doc.id}')">👁</button>
-
-<button class="btn btn-sm btn-warning" onclick="event.stopPropagation();editDocument('${doc.id}')">✏️</button>
-
-<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDocument('${doc.id}')">🗑</button>
-
-<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();generatePDFSingle('${doc.id}')">📄</button>
+                            <button class="btn btn-sm btn-info" onclick="event.stopPropagation();viewDocument('${doc.id}')" style="margin-right:5px;">👁</button>
+                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();generatePDFSingle('${doc.id}')">📄</button>
                         </div>
                     </div>
                 `;
@@ -5317,111 +5306,6 @@ function openNewDocumentForPatient() {
         updatePatientForDoc();
         closeProntuario();
     }
-}
-    function deleteDocument(docId){
-
-if(!confirm("Deseja realmente excluir este documento?")) return;
-
-database.ref('documents/' + currentUser.cpf + '/' + docId).remove()
-.then(()=>{
-loadAllDocuments();
-showToast("Documento excluído");
-})
-.catch(error=>{
-alert("Erro ao excluir: " + error.message);
-});
-
-}
-
-function editDocument(docId){
-    viewDocument(docId);
-}
-
-// Carrega evoluções salvas quando abre o documento
-function loadSavedEvolutions(patientId) {
-    if (!patientId) return;
-    
-    database.ref('documents/' + currentUser.cpf + '/evolucoes/' + patientId).once('value')
-    .then(snapshot => {
-        if (snapshot.exists()) {
-            const evolucoes = snapshot.val();
-            Object.keys(evolucoes).forEach(i => {
-                const campo = document.getElementById('evolucao-' + i);
-                const dataCampo = document.getElementById('evolucao-data-' + i);
-                if (campo && evolucoes[i].texto) {
-                    campo.value = evolucoes[i].texto;
-                    campo.style.border = "2px solid #28a745";
-                    campo.dataset.saved = "true";
-                }
-                if (dataCampo && evolucoes[i].data) {
-                    dataCampo.value = evolucoes[i].data;
-                }
-            });
-        }
-    });
-}
-
-// Excluir uma evolução específica
-function deleteEvolutionField(i) {
-    if (!confirm('Deseja excluir esta evolução?')) return;
-    
-    const campo = document.getElementById('evolucao-' + i);
-    const dataCampo = document.getElementById('evolucao-data-' + i);
-    
-    if (campo) {
-        campo.value = '';
-        campo.style.border = "2px solid #e0e0e0";
-        delete campo.dataset.saved;
-    }
-    if (dataCampo) {
-        dataCampo.value = new Date().toISOString().split('T')[0];
-    }
-    
-    database.ref('documents/' + currentUser.cpf + '/evolucoes/' + currentPatientId + '/' + i).remove()
-    .then(() => {
-        showToast('Evolução ' + i + ' excluída!');
-    });
-}
-
-// Sobrescreve openDocumentForm para carregar evoluções
-const originalOpenDocForm = openDocumentForm;
-openDocumentForm = function(doc) {
-    originalOpenDocForm(doc);
-    if (doc.id === 'evolucao') {
-        setTimeout(() => loadSavedEvolutions(currentPatientId), 600);
-    }
-};
-
-function saveEvolutionField(i){
-    const campo = document.getElementById("evolucao-"+i);
-    
-    if(!campo){
-        alert("Campo de evolução não encontrado");
-        return;
-    }
-    
-    campo.dataset.saved = "true";
-    
-    database.ref('documents/' + currentUser.cpf + '/evolucoes/' + currentPatientId + '/' + i).set({
-        texto: campo.value,
-        data: document.getElementById("evolucao-data-"+i).value
-    });
-    
-    campo.style.border = "2px solid #28a745";
-    
-    showToast("Evolução " + i + " salva");
-}
-
-function editEvolutionField(i){
-    const campo = document.getElementById("evolucao-"+i);
-    
-    if(!campo) return;
-    
-    campo.focus();
-    
-    campo.style.border = "2px solid #ffc107";
-    
-    showToast("Editando evolução " + i);
 }
 </script>
 </body>
