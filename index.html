@@ -5081,6 +5081,25 @@ function generatePDFFromView() {
     }
 }
 
+
+function deleteDocumentFromHistory(docId) {
+    if (!confirm('Deseja excluir este documento do histórico?')) return;
+
+    showLoading(true);
+    database.ref('documents/' + currentUser.cpf + '/' + docId).remove()
+        .then(() => {
+            showLoading(false);
+            showToast('Documento excluído com sucesso!');
+            loadAllDocuments();
+            if (currentPatientId) loadPatientDocuments(currentPatientId);
+            closeViewModal();
+        })
+        .catch(error => {
+            showLoading(false);
+            showToast('Erro ao excluir: ' + error.message);
+        });
+}
+
 // HISTÓRICO GERAL
 function loadAllDocuments() {
     const container = document.getElementById('allDocumentsList');
@@ -5122,6 +5141,7 @@ function loadAllDocuments() {
                         </div>
                         <div>
                             <button class="btn btn-sm btn-info" onclick="event.stopPropagation();viewDocument('${doc.id}')" style="margin-right:5px;">👁</button>
+                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteDocumentFromHistory('${doc.id}')" style="margin-right:5px;">🗑</button>
                             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();generatePDFSingle('${doc.id}')">📄</button>
                         </div>
                     </div>
