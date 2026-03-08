@@ -5063,7 +5063,25 @@ function closeViewModal() {
     document.getElementById('viewModal').style.display = 'none';
     currentViewDoc = null;
 }
-
+// EXCLUIR DOCUMENTO DO HISTÓRICO
+function excluirDocumento(docId) {
+    if (confirm('Tem certeza que deseja excluir este documento permanentemente?')) {
+        showLoading(true);
+        
+        database.ref('documents/' + currentUser.cpf + '/' + docId).remove()
+            .then(() => {
+                showLoading(false);
+                showToast('Documento excluído com sucesso!');
+                closeViewModal();
+                loadAllDocuments();
+                if (currentPatientId) loadPatientDocuments(currentPatientId);
+            })
+            .catch(error => {
+                showLoading(false);
+                showToast('Erro ao excluir: ' + error.message);
+            });
+    }
+}
 function generatePDFSingle(docId) {
     showLoading(true);
     database.ref('documents/' + currentUser.cpf + '/' + docId).once('value')
