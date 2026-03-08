@@ -2288,14 +2288,30 @@ function getSpecificFormHTML(docType, profession) {
         `;
         
         // Gerar 10 campos de evolução com data acima de cada um
-        for (let i = 1; i <= 10; i++) {
-            html += `
-                <div class="evolucao-campo">
-                    <div class="form-group" style="margin-bottom:10px;">
-                        <label class="form-label">Data</label>
-                        <input type="date" class="form-input" id="evolucao-data-${i}" value="${new Date().toISOString().split('T')[0]}">
+                for (let i = 1; i <= 10; i++) {
+                html += `
+                    <div class="evolucao-campo" id="evolucao-container-${i}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                            <h5 style="margin:0;color:var(--azul-marinho);">Evolução #${i}</h5>
+                            <button type="button" class="btn btn-success btn-xs" onclick="salvarEvolucaoIndividual(${i})" style="width:auto;padding:5px 10px;font-size:0.75rem;">
+                                💾 Salvar
+                            </button>
+                        </div>
+                        <div class="form-group" style="margin-bottom:10px;">
+                            <label class="form-label">Data</label>
+                            <input type="date" class="form-input" id="evolucao-data-${i}" value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <textarea class="form-textarea evolucao-campo-texto" id="evolucao-${i}" placeholder="Digite a evolução clínica aqui..." style="min-height:80px;"></textarea>
                     </div>
-                    <textarea class="form-textarea evolucao-campo-texto" id="evolucao-${i}" placeholder="" style="min-height:80px;"></textarea>
+                `;
+            }
+            
+            // Botão para salvar todas de uma vez
+            html += `
+                <div class="btn-group" style="margin-top:20px;">
+                    <button type="button" class="btn btn-success" onclick="salvarTodasEvolucoes()">
+                        💾 Salvar Todas as Evoluções Preenchidas
+                    </button>
                 </div>
             `;
         }
