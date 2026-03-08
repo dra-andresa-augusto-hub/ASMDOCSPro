@@ -2288,30 +2288,14 @@ function getSpecificFormHTML(docType, profession) {
         `;
         
         // Gerar 10 campos de evolução com data acima de cada um
-                for (let i = 1; i <= 10; i++) {
-                html += `
-                    <div class="evolucao-campo" id="evolucao-container-${i}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                            <h5 style="margin:0;color:var(--azul-marinho);">Evolução #${i}</h5>
-                            <button type="button" class="btn btn-success btn-xs" onclick="salvarEvolucaoIndividual(${i})" style="width:auto;padding:5px 10px;font-size:0.75rem;">
-                                💾 Salvar
-                            </button>
-                        </div>
-                        <div class="form-group" style="margin-bottom:10px;">
-                            <label class="form-label">Data</label>
-                            <input type="date" class="form-input" id="evolucao-data-${i}" value="${new Date().toISOString().split('T')[0]}">
-                        </div>
-                        <textarea class="form-textarea evolucao-campo-texto" id="evolucao-${i}" placeholder="Digite a evolução clínica aqui..." style="min-height:80px;"></textarea>
-                    </div>
-                `;
-            }
-            
-            // Botão para salvar todas de uma vez
+        for (let i = 1; i <= 10; i++) {
             html += `
-                <div class="btn-group" style="margin-top:20px;">
-                    <button type="button" class="btn btn-success" onclick="salvarTodasEvolucoes()">
-                        💾 Salvar Todas as Evoluções Preenchidas
-                    </button>
+                <div class="evolucao-campo">
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label class="form-label">Data</label>
+                        <input type="date" class="form-input" id="evolucao-data-${i}" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <textarea class="form-textarea evolucao-campo-texto" id="evolucao-${i}" placeholder="" style="min-height:80px;"></textarea>
                 </div>
             `;
         }
@@ -5057,23 +5041,6 @@ function viewDocument(docId) {
                         ${doc.location ? `<p><strong>Local:</strong> ${doc.location}</p>` : ''}
                     </div>
                 `;
-                                document.getElementById('viewModalBody').innerHTML = content;
-                document.getElementById('viewModal').style.display = 'flex';
-                
-                // Adicionar botão de excluir no modal de visualização
-                const btnGroup = document.querySelector('#viewModal .btn-group');
-                if (btnGroup) {
-                    // Limpar botão excluir anterior se existir
-                    const btnExcluirAntigo = document.getElementById('btnExcluirDoc');
-                    if (btnExcluirAntigo) btnExcluirAntigo.remove();
-                    
-                    const btnExcluir = document.createElement('button');
-                    btnExcluir.id = 'btnExcluirDoc';
-                    btnExcluir.className = 'btn btn-danger';
-                    btnExcluir.innerHTML = '🗑️ Excluir';
-                    btnExcluir.onclick = () => excluirDocumento(docId);
-                    btnGroup.appendChild(btnExcluir);
-                }
                 
                 if (doc.formData) {
                     content += '<div class="form-card">';
@@ -5085,6 +5052,9 @@ function viewDocument(docId) {
                     });
                     content += '</div>';
                 }
+                
+                document.getElementById('viewModalBody').innerHTML = content;
+                document.getElementById('viewModal').style.display = 'flex';
             }
         });
 }
@@ -5093,25 +5063,7 @@ function closeViewModal() {
     document.getElementById('viewModal').style.display = 'none';
     currentViewDoc = null;
 }
-// EXCLUIR DOCUMENTO DO HISTÓRICO
-function excluirDocumento(docId) {
-    if (confirm('Tem certeza que deseja excluir este documento permanentemente?')) {
-        showLoading(true);
-        
-        database.ref('documents/' + currentUser.cpf + '/' + docId).remove()
-            .then(() => {
-                showLoading(false);
-                showToast('Documento excluído com sucesso!');
-                closeViewModal();
-                loadAllDocuments();
-                if (currentPatientId) loadPatientDocuments(currentPatientId);
-            })
-            .catch(error => {
-                showLoading(false);
-                showToast('Erro ao excluir: ' + error.message);
-            });
-    }
-}
+
 function generatePDFSingle(docId) {
     showLoading(true);
     database.ref('documents/' + currentUser.cpf + '/' + docId).once('value')
