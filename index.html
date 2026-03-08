@@ -5041,6 +5041,23 @@ function viewDocument(docId) {
                         ${doc.location ? `<p><strong>Local:</strong> ${doc.location}</p>` : ''}
                     </div>
                 `;
+                                document.getElementById('viewModalBody').innerHTML = content;
+                document.getElementById('viewModal').style.display = 'flex';
+                
+                // Adicionar botão de excluir no modal de visualização
+                const btnGroup = document.querySelector('#viewModal .btn-group');
+                if (btnGroup) {
+                    // Limpar botão excluir anterior se existir
+                    const btnExcluirAntigo = document.getElementById('btnExcluirDoc');
+                    if (btnExcluirAntigo) btnExcluirAntigo.remove();
+                    
+                    const btnExcluir = document.createElement('button');
+                    btnExcluir.id = 'btnExcluirDoc';
+                    btnExcluir.className = 'btn btn-danger';
+                    btnExcluir.innerHTML = '🗑️ Excluir';
+                    btnExcluir.onclick = () => excluirDocumento(docId);
+                    btnGroup.appendChild(btnExcluir);
+                }
                 
                 if (doc.formData) {
                     content += '<div class="form-card">';
@@ -5052,9 +5069,6 @@ function viewDocument(docId) {
                     });
                     content += '</div>';
                 }
-                
-                document.getElementById('viewModalBody').innerHTML = content;
-                document.getElementById('viewModal').style.display = 'flex';
             }
         });
 }
